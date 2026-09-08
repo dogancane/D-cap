@@ -396,11 +396,11 @@ optgroup{font-weight:700;font-style:normal}
         <div class="field"><label for="o_ltNac">Nacelle lifting tool</label><input type="number" id="o_ltNac" data-o="toolNacelle"><span class="unit">t</span></div>
         <div class="field"><label for="o_ltTow">Tower lifting tool</label><input type="number" id="o_ltTow" data-o="toolTower"><span class="unit">t</span></div>
         <div class="field"><label for="o_ltBld">Blade lifting tool</label><input type="number" id="o_ltBld" data-o="toolBlade"><span class="unit">t</span></div>
-        <div class="field"><label for="o_rig">Rigging height</label><input type="number" id="o_rig" data-o="rigHeight" step="0.5"><span class="unit">m</span></div>
         <div class="subhead">Lift geometry</div>
         <div class="field"><label for="o_radMode">Working radius</label><select id="o_radMode" data-o="radiusMode"><option value="auto">Auto: rated radius</option><option value="man">Manual</option></select></div>
         <div class="field"><label for="o_rad">&nbsp;&nbsp;&nbsp;radius</label><input type="number" id="o_rad" data-o="workRadius"><span class="unit">m</span></div>
-        <div class="field"><label for="o_clr">Clearance above hub</label><input type="number" id="o_clr" data-o="hookClearance" step="0.5"><span class="unit">m</span></div>
+        <div class="field"><label for="o_clr">Swing margin</label><input type="number" id="o_clr" data-o="hookClearance" step="0.5"><span class="unit">m</span></div>
+        <p class="hint" style="font-size:10px">Safety clearance added to BOTH the hub-height reach requirement and the tower single-piece lift requirement, so the hook clears with genuine spare room rather than just touching. Default 5 m.</p>
         <div class="subhead">Deck reserves</div>
         <div class="field"><label for="o_other">Other cargo reserve</label><input type="number" id="o_other" data-o="otherCargoPct" step="1"><span class="unit">%</span></div>
         <div class="field"><label for="o_rackC">Blade rack cap (0=auto)</label><input type="number" id="o_rackC" data-o="rackSets" step="1" min="0"><span class="unit">sets</span></div>
@@ -473,7 +473,7 @@ optgroup{font-weight:700;font-style:normal}
           <div class="field"><label for="t_rackA">Blade rack area (per set)</label><input type="number" id="t_rackA" data-t="rackArea"><span class="unit">m²</span></div>
           <div class="field"><label for="t_toolA">Lifting tool stowage area</label><input type="number" id="t_toolA" data-t="toolArea"><span class="unit">m²</span></div>
         </div>
-        <p class="hint">Footprints scale by rotor² from 10 MW anchor (102 m² tower, 160 m² nacelle, 550 m² rack). Hub ships on the nacelle.</p>
+        <p class="hint">Footprints scale by rotor² from 10 MW anchor (102 m² tower, 160 m² nacelle, 550 m² rack). Hub ships on the nacelle.<br>Tower length and tower-top-to-hub are confirmed reference figures for 15/18/21 MW. For the other sizes they are derived from those three using the consistent relationship hub height = tower length + tower-top-to-hub + 25 m (foundation/TP above LAT), which reproduces all three confirmed points to within 0.2 m.</p>
       </div>
     </div>
 
@@ -1356,37 +1356,37 @@ const DEFAULT_TURBINES = [
   bladeW:55, bladeLength:115, rackArea:761,
   toolArea:386, conf:"v" },
 { id:"t14", owner:"Other", name:"14 MW  |  222 m rotor  |  band 12-15 MW",
-  mw:14, rotor:222, hubHeight:140,
+  mw:14, rotor:222, hubHeight:140, towerLength:110.0, tipToHub:5.0,
   nacelleW:820, nacelleArea:218, nacelleStowH:12,
   towerW:1000, towerArea:139, towerStowH:87, towerStacks:1,
   bladeW:52, bladeLength:108, rackArea:695,
   toolArea:341, conf:"e" },
 { id:"t11", owner:"Other", name:"11 MW  |  200 m rotor  |  band 6-11 MW",
-  mw:11, rotor:200, hubHeight:125,
+  mw:11, rotor:200, hubHeight:125, towerLength:95.9, tipToHub:4.1,
   nacelleW:760, nacelleArea:177, nacelleStowH:11,
   towerW:850, towerArea:113, towerStowH:78, towerStacks:1,
   bladeW:47, bladeLength:97, rackArea:594,
   toolArea:277, conf:"e" },
 { id:"t10", owner:"Other", name:"10 MW  |  190 m rotor  |  band 6-11 MW",
-  mw:10, rotor:190, hubHeight:118,
+  mw:10, rotor:190, hubHeight:118, towerLength:89.2, tipToHub:3.8,
   nacelleW:685, nacelleArea:160, nacelleStowH:11,
   towerW:780, towerArea:102, towerStowH:73, towerStacks:1,
   bladeW:42, bladeLength:93, rackArea:550,
   toolArea:250, conf:"a" },
 { id:"t8", owner:"Other", name:"8 MW  |  167 m rotor  |  band 6-11 MW",
-  mw:8, rotor:167, hubHeight:110,
+  mw:8, rotor:167, hubHeight:110, towerLength:81.8, tipToHub:3.2,
   nacelleW:510, nacelleArea:124, nacelleStowH:10,
   towerW:600, towerArea:79, towerStowH:68, towerStacks:1,
   bladeW:35, bladeLength:81, rackArea:453,
   toolArea:193, conf:"e" },
 { id:"t6", owner:"Other", name:"6 MW  |  154 m rotor  |  band 6-11 MW",
-  mw:6, rotor:154, hubHeight:102,
+  mw:6, rotor:154, hubHeight:102, towerLength:74.4, tipToHub:2.6,
   nacelleW:450, nacelleArea:105, nacelleStowH:10,
   towerW:500, towerArea:67, towerStowH:63, towerStacks:1,
   bladeW:27, bladeLength:75, rackArea:401,
   toolArea:164, conf:"e" },
 { id:"t5", owner:"Other", name:"5 MW  |  130 m rotor  |  band 4-6 MW",
-  mw:5, rotor:130, hubHeight:90,
+  mw:5, rotor:130, hubHeight:90, towerLength:62.7, tipToHub:2.3,
   nacelleW:375, nacelleArea:75, nacelleStowH:9,
   towerW:400, towerArea:48, towerStowH:56, towerStacks:1,
   bladeW:20, bladeLength:63, rackArea:311,
@@ -1395,7 +1395,7 @@ const DEFAULT_TURBINES = [
 
 const DEFAULT_OPS = {
   waterDepth:40, tide:2, airGap:10, legPen:5,
-  toolNacelle:120, toolTower:90, toolBlade:60, rigHeight:14,
+  toolNacelle:120, toolTower:90, toolBlade:60,
   radiusMode:'auto', workRadius:40, hookClearance:5,
   otherCargoPct:10, rackSets:0
 };
@@ -1697,12 +1697,14 @@ function compute(v, t, o){
   const R = {};
 
   // ---- Gate 1 & 2 share the site air gap, so they are resolved together.
-  // Required hook height is the turbine's hub height, full stop — no added
-  // rigging/clearance margin on top (confirmed reference figures: 15 MW =
-  // 149.5 m, 18 MW = 172 m, 21 MW = 187 m — these ARE t.hubHeight directly).
+  // Required hook height above sea = hub height (confirmed reference figures:
+  // 15 MW = 149.5 m, 18 MW = 172 m, 21 MW = 187 m) PLUS the swing margin,
+  // added on the REQUIREMENT side — the hook must clear with genuine spare
+  // room, not just touch hub height exactly, so the load isn't swinging into
+  // the hub/nacelle on final approach.
   const legAvail = v.legLength - v.hullDepth - v.legReserve;
   const hookKnown = v.hookAboveDeck > 0;
-  const hookNeed = t.hubHeight;
+  const hookNeed = t.hubHeight + o.hookClearance;
 
   let effAirGap = o.airGap;
   let legNeed  = o.waterDepth + o.tide + effAirGap + o.legPen;
@@ -1735,15 +1737,20 @@ function compute(v, t, o){
              boosted:hookBoosted, boostAmount:hookBoosted?AIRGAP_BOOST:0, effAirGap };
 
   // ---- Gate 2b: tower single-piece lift (advisory) ----
-  // If the vessel's hook height above deck is less than the tower's own
-  // erected length, the tower cannot be lifted in one piece — it must be
-  // split into two or more sections. This is technically possible but is
-  // not recommended: extra lifts, extra rigging, reduced efficiency.
+  // Lifting the FULL TOWER directly off the main deck requires the hook to
+  // clear the tower's own length PLUS the swing margin — added on the
+  // REQUIREMENT side (tower length + margin), NOT added to the vessel's
+  // capability. If the vessel's hook-above-deck is less than that combined
+  // requirement, the tower cannot be lifted in one piece — it must be split
+  // into sections. Technically possible, but not recommended: extra lifts,
+  // extra rigging, reduced efficiency.
   const towerLenKnown = t.towerLength > 0;
-  const towerSplitNeeded = towerLenKnown && hookKnown && (v.hookAboveDeck < t.towerLength);
-  R.towerSplit = { known:towerLenKnown, hookAboveDeck:v.hookAboveDeck, towerLength:t.towerLength,
+  const towerLiftNeed = t.towerLength + o.hookClearance;
+  const towerSplitNeeded = towerLenKnown && hookKnown && (v.hookAboveDeck < towerLiftNeed);
+  R.towerSplit = { known:towerLenKnown, hookAboveDeck:v.hookAboveDeck, swingMargin:o.hookClearance,
+                   towerLiftNeed, towerLength:t.towerLength,
                    splitNeeded:towerSplitNeeded,
-                   margin: towerLenKnown ? v.hookAboveDeck - t.towerLength : 0 };
+                   margin: towerLenKnown ? v.hookAboveDeck - towerLiftNeed : 0 };
 
   // ---- Gate 3: crane capacity
   const lifts = [
@@ -1869,16 +1876,16 @@ function renderResults(){
 
   if(!R.hook.known){
     g.push(gateCard("Hook reach", "warn", "Not verifiable",
-      `No hook height on file<br>Would need &nbsp;${n1(R.hook.need)} m above sea level<br><span style="color:#7D8B93">${n0(t.hubHeight)} hub height (hook must clear this directly)</span>`));
+      `No hook height on file<br>Would need &nbsp;${n1(R.hook.need)} m above sea level<br><span style="color:#7D8B93">${n1(t.hubHeight)} hub height + ${n1(OPS.hookClearance)} m swing margin</span>`));
   } else {
     g.push(gateCard("Hook reach", R.hook.pass?"pass":"fail", R.hook.pass?"Clears by "+n1(R.hook.margin)+" m":"Short by "+n1(Math.abs(R.hook.margin))+" m",
-      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} above deck + ${n1(v.hullDepth)} hull + ${n1(R.hook.effAirGap)} air gap${R.hook.boosted?' (boosted +'+R.hook.boostAmount+'m)':''}</span>`));
+      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} above deck + ${n1(v.hullDepth)} hull + ${n1(R.hook.effAirGap)} air gap${R.hook.boosted?' (boosted +'+R.hook.boostAmount+'m)':''}<br>${n1(t.hubHeight)} hub height + ${n1(OPS.hookClearance)} m swing margin</span>`));
   }
 
   if(R.towerSplit.known){
     g.push(gateCard("Tower single-piece lift", R.towerSplit.splitNeeded?"warn":"pass",
       R.towerSplit.splitNeeded?"Split required, "+n1(Math.abs(R.towerSplit.margin))+" m short":"One-piece lift, "+n1(R.towerSplit.margin)+" m spare",
-      `Hook above deck &nbsp;${n1(v.hookAboveDeck)} m<br>Tower length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(t.towerLength)} m<br><span style="color:#7D8B93">${R.towerSplit.splitNeeded?'tower must be split into 2+ sections — extra lifts, not recommended':'tower ships and lifts as one continuous piece'}</span>`));
+      `Hook above deck &nbsp;${n1(v.hookAboveDeck)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.towerSplit.towerLiftNeed)} m<br><span style="color:#7D8B93">${n1(t.towerLength)} tower length + ${n1(R.towerSplit.swingMargin)} m swing margin</span><br><span style="color:#7D8B93">${R.towerSplit.splitNeeded?'tower must be split into 2+ sections — extra lifts, not recommended':'tower ships and lifts as one continuous piece'}</span>`));
   }
 
   g.push(gateCard("Crane capacity", R.crane.pass?"pass":"fail", R.crane.pass?n0(R.crane.margin)+" t spare":"Short by "+n0(Math.abs(R.crane.margin))+" t",
@@ -2182,7 +2189,7 @@ function drawElev(v,t,R,o_){
   // required hub height
   const okc = R.hook.pass ? "#1F7A4C" : "#A32C1E";
   o.push(`<line x1="${xL-30}" y1="${Y(R.hook.need)}" x2="${W-8}" y2="${Y(R.hook.need)}" stroke="${okc}" stroke-width="1.8" stroke-dasharray="7 4"/>`);
-  o.push(`<text x="${W-8}" y="${Y(R.hook.need)-6}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" fill="${okc}" text-anchor="end">REQ ${n1(R.hook.need)} m = hub ${n0(t.hubHeight)} + rig ${n1(o_.rigHeight)} + clr ${n1(o_.hookClearance)}</text>`);
+  o.push(`<text x="${W-8}" y="${Y(R.hook.need)-6}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" fill="${okc}" text-anchor="end">REQ ${n1(R.hook.need)} m = hub ${n1(t.hubHeight)} + swing margin ${n1(o_.hookClearance)}</text>`);
 
   // turbine silhouette
   const tx=xR+55;
@@ -2368,12 +2375,21 @@ function bind(){
   });
 
   // ===== SAVE / LOAD DATA PERSISTENCE =====
+  // CURRENT_DATA_VERSION must be bumped every time a reference-data
+  // correction ships (turbine specs, gate formulas, etc.). Saved snapshots
+  // from an OLDER version are discarded on load instead of silently
+  // overriding the fix — this is what previously let stale saved hub-height
+  // values (158 m for 18 MW, 145 m for 15 MW) keep reappearing indefinitely
+  // even after the source data was corrected, because the old load code
+  // never checked the version field at all.
+  const CURRENT_DATA_VERSION = 3;
+
   document.getElementById('btnSave').onclick = () => {
     const data = {
       vessels: VESSELS.map(v=>Object.assign({},v)),
       turbines: TURBINES.map(t=>Object.assign({},t)),
       ops: Object.assign({},OPS),
-      version: 2,
+      version: CURRENT_DATA_VERSION,
       savedAt: new Date().toISOString()
     };
     try {
@@ -2385,12 +2401,20 @@ function bind(){
     } catch(e){ alert('Save failed: ' + e.message); }
   };
 
-  // Load saved data on startup — restore previously saved vessel/turbine/ops edits
+  // Load saved data on startup — restore previously saved vessel/turbine/ops
+  // edits, but ONLY if they were saved under the current data version. A
+  // mismatch means the shipped defaults have since been corrected, so the
+  // stale save is discarded and the fresh corrected defaults are used instead.
   (() => {
     try {
       const saved = localStorage.getItem('wtiv_calc_data');
       if(saved){
         const d = JSON.parse(saved);
+        if(d.version !== CURRENT_DATA_VERSION){
+          console.warn('Saved data is from an older version ('+d.version+' vs '+CURRENT_DATA_VERSION+') — discarding stale save, using corrected defaults.');
+          localStorage.removeItem('wtiv_calc_data');
+          return;
+        }
         if(d.vessels && Array.isArray(d.vessels)){
           d.vessels.forEach(sv=>{ const v=VESSELS.find(x=>x.id===sv.id); if(v) Object.assign(v,sv); });
         }
@@ -2830,7 +2854,17 @@ function fndZones(v){
   const cRzone = legR * 1.55;   // slewing envelope shown as dashed circle
 
   const bow = L * 0.09;  // bow taper length (for drawing only)
-  return { L, B, bow, accom, cargoAft, cargoEnd, cargoLen, legs, cl, legR, cRzone, nLegs, isFloat, inset };
+
+  // Accommodation start (drawing only — does not affect cargo/capacity maths).
+  // For jack-ups the block sits just forward of the fwd leg pair, as on the
+  // real vessels; anchoring it to cargoEnd instead left a ~20% of hull length
+  // gap of empty deck between the fwd legs and the accommodation.
+  const fwdLegMx = legs.length ? Math.max(...legs.map(l => l.mx)) : cargoEnd;
+  const accomStartM = (nLegs > 0)
+    ? Math.min(cargoEnd - 2, fwdLegMx + legR + 6)
+    : cargoEnd - 2;
+
+  return { L, B, bow, accom, cargoAft, cargoEnd, cargoLen, legs, cl, legR, cRzone, nLegs, isFloat, inset, accomStartM };
 }
 
 // ── Default stack layout (vessel-aware) ────────────────────────────────────
@@ -2995,15 +3029,17 @@ function fndFillVesselSel(){
     fndInitCranePoints(nv); fndDefaultStacks(nv, mpDia()); fndRenderStackRows(); fndRender(); };
 }
 
-// ── SVG coordinate helpers (stored on svg dataset by renderer) ─────────────
-function svgToModel(svg, cx, cy){
-  const sc=parseFloat(svg.dataset.sc||'4'), x0=parseFloat(svg.dataset.x0||'0'), y0=parseFloat(svg.dataset.y0||'0');
-  return { mx:(cx-x0)/sc, my:(cy-y0)/sc };
-}
-function modelToSVG(svg, mx, my){
-  const sc=parseFloat(svg.dataset.sc||'4'), x0=parseFloat(svg.dataset.x0||'0'), y0=parseFloat(svg.dataset.y0||'0');
-  return { x:x0+mx*sc, y:y0+my*sc };
-}
+// ── SVG coordinate helper (Foundation drag system) ──────────────────────────
+// NOTE: this used to also define svgToModel()/modelToSVG() here, but those
+// names collide with the WTG calculator's OWN svgToModel()/modelToSVG()
+// (different signatures — 2-arg vs 3-arg). Since both were plain top-level
+// function declarations, this later pair silently overwrote the WTG ones,
+// which is exactly what broke dragging on the WTG deck plan: its moveDrag()
+// called svgToModel(tx, ty) expecting the 2-arg version, but got this 3-arg
+// version instead, where the first numeric argument was treated as an SVG
+// element and ".dataset" on a number is undefined — hence ".sc" on undefined.
+// Foundation's own drag code never actually calls these by name (it does its
+// own inline math via DRG.sc/x0/y0), so they were dead code and are removed.
 function svgClientPt(svg, cx, cy){
   const pt=svg.createSVGPoint(); pt.x=cx; pt.y=cy;
   return pt.matrixTransform(svg.getScreenCTM().inverse());
@@ -3126,7 +3162,7 @@ function drawTopView(v, Z){
 
   // ── Accommodation block (forward of fwd legs) ─────────────────────────
   // Spans from cargoEnd to near the bow. Represents the bridge/superstructure.
-  const accomStart = Z.cargoEnd - 2;   // shifted aft, matches side view
+  const accomStart = Z.accomStartM;    // anchored just fwd of the fwd legs (jack-ups)
   const accomEnd   = Z.L - 12;          // shifted aft, matches side view
   if(accomEnd > accomStart + 4){
     const aW = px(accomEnd - accomStart), aH = px(Z.B * 0.80);
@@ -3433,7 +3469,7 @@ function drawSideView(v, Z){
   // Simple clean rectangle, aligned exactly with the top view's accommodation
   // zone (same Z.cargoEnd → Z.L x-range) — matches the user's sketch: one
   // plain block, not a detailed multi-deck structure.
-  const accomStartX = X(Z.cargoEnd - 2);   // shifted aft, closer to the fwd legs
+  const accomStartX = X(Z.accomStartM);    // same anchor as the top view
   const accomEndX   = X(Z.L - 12);          // shifted aft, leaving bow/helideck overhang clear
   const accomW = accomEndX - accomStartX;
   if(accomW > 12){
