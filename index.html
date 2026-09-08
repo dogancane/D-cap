@@ -2859,7 +2859,7 @@ function fndDefaultStacks(v, dia){
     // ── Jack-up vessel: piles between the aft and fwd leg pairs ───────────
     // Piles stored transversely (LENGTH across beam). Pitch in x = dia + 0.8m.
     // Usable x-zone: aftLegX + legR + 0.5m  →  fwdLegX - legR - 0.5m
-    const jackupGap = 0.8;   // tight clearance between adjacent piles
+    const jackupGap = clr;   // user-configurable — same clearance control as floaters
     const pitch = dia + jackupGap;
     const aftLegs = Z.legs.filter(l => l.aft);
     const fwdLegs = Z.legs.filter(l => !l.aft);
@@ -3839,7 +3839,23 @@ function fndRenderResults(v, Z, C){
 }
 
 // ── Fleet comparison (quiet — no DOM side effects) ─────────────────────────
-function fndFleetComputeQuiet(v2){
+// The reference monopile spec used for fleet-wide comparison — derived from
+// whatever the user has ACTUALLY configured on the currently selected
+// vessel's piles (which may have been edited individually, per position),
+// not a hardcoded default. This is what makes "change a pile's weight ->
+// every vessel's fleet-comparison number updates accordingly" work.
+function fndReferencePileSpec(){
+  const allPiles = (STACKS||[]).flatMap(st=>st.piles||[]);
+  if(!allPiles.length) return {dia: mpDia(), len: mpLen(), wt: mpWt()};
+  const n = allPiles.length;
+  return {
+    dia: allPiles.reduce((s,p)=>s+p.dia,0)/n,
+    len: allPiles.reduce((s,p)=>s+p.len,0)/n,
+    wt:  allPiles.reduce((s,p)=>s+p.wt,0)/n,
+  };
+}
+
+function fndFleetComputeQuiet(v2, ref){
   if(v2.foundationCapable === false){
     return {practical:0, craneOK:false, method:'Not monopile-capable', notCapable:true};
   }
@@ -3854,7 +3870,11 @@ function fndFleetComputeQuiet(v2){
     fndCurV = VESSELS.indexOf(v2);
     EQUIP = {gripper:null, hammer:null};
     CRANE_OVERRIDE = null;
-    fndDefaultStacks(v2, mpDia());
+    fndDefaultStacks(v2, ref.dia);
+    // Apply the reference weight/length to every generated pile — this is
+    // the actual monopile spec being compared across the fleet, taken from
+    // the user's current configuration rather than a hardcoded constant.
+    STACKS.forEach(st=>st.piles.forEach(p=>{ p.len=ref.len; p.wt=ref.wt; }));
     const Z2 = fndZones(v2);
     const C2 = fndComputeCapacity(v2, Z2);
     return {practical: C2.practical, craneOK: C2.craneOK, method: C2.method};
@@ -3869,11 +3889,19 @@ function fndFleetComputeQuiet(v2){
 function fndRenderFleet(){
   const tbl=document.getElementById('fndFleetTbl');
   if(!tbl)return;
-  const rows=VESSELS.map(v=>{ const r=fndFleetComputeQuiet(v); return {v,r}; })
+  // Compute the reference pile spec ONCE, from the currently selected
+  // vessel's actual (possibly user-edited) piles — every fleet row is then
+  // compared against this same spec, so editing a monopile's weight/length/
+  // diameter on the current vessel correctly changes every other vessel's
+  // fleet-comparison number too.
+  const ref = fndReferencePileSpec();
+  const rows=VESSELS.map(v=>{ const r=fndFleetComputeQuiet(v, ref); return {v,r}; })
     .sort((a,b)=>b.r.practical-a.r.practical);
+  const refNote = `Ø${ref.dia.toFixed(1)}m &times; ${ref.len.toFixed(0)}m, ${ref.wt.toFixed(0)}t each`;
   tbl.innerHTML=`<tr><th>Vessel</th><th class="n">MPs/trip</th><th>Method</th></tr>`+
     rows.map(({v,r})=>`<tr style="cursor:pointer${v===VESSELS[fndCurV]?';font-weight:700':''}" onclick="fndSetVessel(${VESSELS.indexOf(v)})">
-      <td>${v.name}</td><td class="n">${r.notCapable?'N/A':(r.practical||'0')}</td><td style="font-size:11px">${r.method}</td></tr>`).join('');
+      <td>${v.name}</td><td class="n">${r.notCapable?'N/A':(r.practical||'0')}</td><td style="font-size:11px">${r.method}</td></tr>`).join('')
+    + `<tr><td colspan="3" style="font-size:10px;color:#789;padding-top:6px">Compared at ${refNote} (from current vessel's arrangement)</td></tr>`;
 }
 
 function fndSetVessel(idx){
