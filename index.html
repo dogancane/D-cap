@@ -3376,7 +3376,7 @@ function drawTopView(v, Z){
   const hEl=svg.querySelector('#fndHamEl');   if(hEl) attachDrag(hEl,svg,'hammer',0,hamPos.mx,hamPos.my);
   const cEl=svg.querySelector('#fndCraneEl'); if(cEl && isFloat) attachDrag(cEl,svg,'crane',0,Z.cl.mx,Z.cl.my);
   svg.onmousemove=fndMoveDrag; svg.onmouseup=fndEndDrag; svg.onmouseleave=fndEndDrag;
-  svg.ontouchmove=e=>{e.preventDefault();fndMoveDrag(e);}; svg.ontouchend=fndEndDrag;
+  svg.ontouchmove=e=>{ if(DRG.active&&e.touches.length===1){ e.preventDefault(); fndMoveDrag(e); } }; svg.ontouchend=fndEndDrag;
 
   const tag=document.getElementById('fndTopTag');
   if(tag) tag.textContent=`${isFloat?'side-by-side':'transverse between legs'} · ${STACKS.reduce((s,st)=>s+st.piles.length,0)} MPs`;
