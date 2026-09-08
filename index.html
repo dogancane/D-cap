@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WTIV Set Capacity Calculator</title>
+<title>D-Cap</title>
 <style>
 :root{
   --hull:#0B1F2A;
@@ -264,12 +264,34 @@ optgroup{font-weight:700;font-style:normal}
 /* ── Snap guide lines ───────────────────────────────── */
 .snap-guide{pointer-events:none;opacity:0.7}
 
+
+/* ─── Foundation tab ─────────────────────────────── */
+.fnd-sections{display:flex;flex-direction:column;gap:6px}
+.fnd-sec-row{display:grid;grid-template-columns:1fr 72px 72px 72px 24px;gap:6px;align-items:center;background:#1a3245;border-radius:4px;padding:5px 8px}
+.fnd-sec-row label{font-size:11px;color:#aaa}
+.fnd-sec-row input{background:#12263a;color:#e8edf0;border:1px solid #2a4a6a;border-radius:3px;padding:3px 5px;font-size:12px;width:100%}
+.fnd-sec-row .rm{background:none;border:none;color:#667;cursor:pointer;font-size:15px;padding:0 2px}
+.fnd-sec-row .rm:hover{color:#e74}
+.verdict-card{border-radius:6px;padding:12px 14px;margin-bottom:10px;font-size:13px}
+.verdict-green{background:#0d3320;border:1px solid #2a7a50;color:#7ddba4}
+.verdict-amber{background:#332910;border:1px solid #7a5a20;color:#e0bc6a}
+.verdict-red{background:#330d0d;border:1px solid #7a2020;color:#e07a7a}
+.gate-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e3448;font-size:12px}
+.gate-row:last-child{border-bottom:none}
+.gate-label{color:#8aa}
+.gate-val{font-family:monospace;font-size:11px}
+.gate-pass{color:#5cb88a}
+.gate-fail{color:#e07a7a}
+.gate-warn{color:#e0bc6a}
+.fnd-elev-svg{width:100%;height:auto;display:block;background:#0e1e2e;border-radius:4px}
+.method-chip{display:inline-block;background:#0d2a3a;border:1px solid #2a6a8a;border-radius:12px;padding:2px 10px;font-size:11px;color:#7acce0;margin:2px}
+
 </style>
 </head>
 <body>
 
 <header>
-  <h1>WTIV Set Capacity Calculator</h1>
+  <h1>D-Cap</h1>
   <span class="sub" id="stamp"></span>
   <span class="spacer"></span>
   <button id="btnSave" style="background:#1a7f37;color:#fff;font-weight:600;padding:6px 16px;border:none;border-radius:4px;cursor:pointer;font-size:13px">Save Data</button>
@@ -285,6 +307,7 @@ optgroup{font-weight:700;font-style:normal}
   <button role="tab" aria-selected="false" data-tab="fleet">Fleet screening</button>
   <button role="tab" aria-selected="false" data-tab="data">Vessel &amp; turbine data</button>
   <button role="tab" aria-selected="false" data-tab="method">Method &amp; assumptions</button>
+  <button role="tab" aria-selected="false" data-tab="foundation" style="background:rgba(30,110,80,0.15);color:#5cb88a">⚓ Foundation</button>
 </nav>
 
 <main>
@@ -436,6 +459,8 @@ optgroup{font-weight:700;font-style:normal}
           <div class="field"><label for="t_mw">Rated power</label><input type="number" id="t_mw" data-t="mw" step="0.5"><span class="unit">MW</span></div>
           <div class="field"><label for="t_rotor">Rotor diameter</label><input type="number" id="t_rotor" data-t="rotor"><span class="unit">m</span></div>
           <div class="field"><label for="t_hub">Hub height above LAT</label><input type="number" id="t_hub" data-t="hubHeight"><span class="unit">m</span></div>
+          <div class="field"><label for="t_towLen">Tower length (erected)</label><input type="number" id="t_towLen" data-t="towerLength" step="0.1"><span class="unit">m</span></div>
+          <div class="field"><label for="t_tipHub">Tower top to hub distance</label><input type="number" id="t_tipHub" data-t="tipToHub" step="0.1"><span class="unit">m</span></div>
           <div class="field"><label for="t_nacW">Nacelle weight (hub incl.)</label><input type="number" id="t_nacW" data-t="nacelleW"><span class="unit">t</span></div>
           <div class="field"><label for="t_nacA">Nacelle seafastening area</label><input type="number" id="t_nacA" data-t="nacelleArea"><span class="unit">m²</span></div>
           <div class="field"><label for="t_nacH">Nacelle stow height</label><input type="number" id="t_nacH" data-t="nacelleStowH" step="0.5"><span class="unit">m</span></div>
@@ -553,6 +578,135 @@ optgroup{font-weight:700;font-style:normal}
 </main>
 
 <footer>Internal engineering tool. Output is an estimate for screening and comparison, not a substitute for a stowage plan or a lift study.</footer>
+
+
+<!-- ============ FOUNDATION ============ -->
+<section id="tab-foundation" class="hidden">
+
+<div class="sel-strip">
+  <label>Vessel</label>
+  <select id="fndVesselSel" style="min-width:200px"></select>
+  <span class="owner-badge" id="fndOwnerBadge"></span>
+  <div class="sep"></div>
+  <div class="result-chip">
+    <div><div class="lbl">Total monopiles</div><div class="num" id="fndTotalMP">--</div></div>
+  </div>
+  <div class="result-chip" style="flex-direction:column;align-items:flex-start">
+    <div class="lbl">Arrangement</div>
+    <div class="bind-chip" id="fndArrangeChip">--</div>
+  </div>
+  <div class="result-chip">
+    <div><div class="lbl">Method</div><div id="fndMethodChip" style="font-size:12px">--</div></div>
+  </div>
+</div>
+
+<div class="calc-3col">
+
+  <!-- LEFT: Foundation + equipment inputs -->
+  <div class="calc-left">
+
+    <div class="panel">
+      <h2>Arrangement <span class="tag">edit each monopile individually</span></h2>
+      <div class="body">
+        <div class="subhead">Storage positions (stacks)</div>
+        <p class="hint" style="font-size:10px;margin-top:0">Each position can hold one or more monopiles stacked. Every monopile has its own diameter, length and weight — set them independently below.</p>
+        <div id="fndStackRows"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button onclick="fndAddStack()" style="padding:4px 12px;font-size:12px;background:#1a5c4a;color:#fff;border:none;border-radius:3px;cursor:pointer">+ Add position</button>
+          <button onclick="fndRemoveStack()" style="padding:4px 12px;font-size:12px;background:#4a2020;color:#fff;border:none;border-radius:3px;cursor:pointer">- Remove last position</button>
+        </div>
+        <div class="subhead" style="margin-top:12px">Clearance</div>
+        <div class="field"><label>Min clearance between piles</label><input type="number" id="mp_clr" value="4.0" min="0.5" max="10" step="0.5"><span class="unit">m</span></div>
+        <p class="hint" id="fndClrNote"></p>
+        <div class="subhead">Crane</div>
+        <div class="field"><label>Crane side</label>
+          <select id="fnd_craneSide">
+            <option value="aft-stbd">Aft starboard</option>
+            <option value="aft-port">Aft port</option>
+          </select>
+        </div>
+        <div class="field"><label>Pedestal height</label>
+          <input type="number" id="fnd_pedestalH" value="30" min="10" max="60" step="1">
+          <span class="unit">m</span>
+        </div>
+        <p class="hint" style="font-size:10px">Height of the crane pedestal above deck. The boom rests horizontal, pivoting from the pedestal top (slew ring) — raise the pedestal to clear taller pile stacks. Drag the crane icon on the deck plan to change its side/position on floaters.</p>
+        <div class="subhead">Crane radius / SWL curve</div>
+        <div style="font-size:10px;color:#666;margin:2px 0 6px">SWL varies with radius. Stack lifting feasibility checked per position.</div>
+        <div id="fndCranePointRows" style="margin-bottom:5px"></div>
+        <button onclick="fndAddCranePoint()" style="padding:3px 10px;font-size:11px;background:#1a4a6a;color:#fff;border:none;border-radius:3px;cursor:pointer">+ Add R/SWL point</button>
+        <div class="subhead" style="margin-top:10px">Lifting equipment</div>
+        <div class="field"><label>Spreader bar weight</label><input type="number" id="fnd_spreadW" value="150" min="0" max="500" step="10"><span class="unit">t</span></div>
+        <div class="field"><label>Gripper diameter</label><input type="number" id="eq_gripDia" value="12" min="6" max="18" step="0.5"><span class="unit">m</span></div>
+        <div class="field"><label>Hammer L</label><input type="number" id="eq_hamL" value="12" min="4" max="24" step="1"><span class="unit">m</span></div>
+        <div class="field"><label>Hammer W</label><input type="number" id="eq_hamW" value="7" min="3" max="14" step="1"><span class="unit">m</span></div>
+        <div class="subhead">Site</div>
+        <div class="field"><label>Site water depth</label><input type="number" id="fnd_wd" value="35" min="1" max="80" step="0.5"><span class="unit">m</span></div>
+      </div>
+    </div>
+
+  </div><!-- /calc-left -->
+
+  <!-- CENTER: Top view + side view -->
+  <div class="calc-center">
+
+    <div class="panel">
+      <h2>Deck plan (top view) <span class="tag" id="fndTopTag"></span>
+        <span style="float:right;font-size:11px;color:#888;font-weight:400">Drag piles, gripper &amp; hammer to reposition</span>
+      </h2>
+      <svg id="fndTopSVG" viewBox="0 0 760 440" role="img"
+           style="width:100%;height:auto;display:block;background:#f7f9fa;border-radius:4px"
+           aria-label="Top view of monopile deck arrangement"></svg>
+      <div class="legend" style="font-size:10px;margin-top:4px">
+        <span><i style="background:#7a8a94;border-radius:50%"></i>Monopile (top view)</span>
+        <span><i style="background:#7a8a94;opacity:0.35;border:1px dashed #2a3a44"></i>Overhang</span>
+        <span><i style="background:#f4c542;border-radius:50%"></i>Gripper</span>
+        <span><i style="background:#3a4a55"></i>Hammer</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Side view (elevation) <span class="tag" id="fndSideTag"></span></h2>
+      <svg id="fndSideSVG" viewBox="0 0 760 300" role="img"
+           style="width:100%;height:auto;display:block;background:#0e1e2e;border-radius:4px"
+           aria-label="Side view elevation of monopile storage arrangement"></svg>
+    </div>
+
+  </div><!-- /calc-center -->
+
+  <!-- RIGHT: Results -->
+  <div class="calc-right">
+
+    <div class="panel">
+      <h2>Capacity summary</h2>
+      <div class="body" id="fndCapBody"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Installation method</h2>
+      <div class="body" id="fndMethBody"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Campaign</h2>
+      <div class="body">
+        <div class="field"><label>Piles required (project)</label>
+          <input type="number" id="mp_qty" value="60" min="1" max="1000" step="1">
+        </div>
+        <table id="fndCampTbl"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Fleet comparison</h2>
+      <div class="body" style="max-height:340px;overflow-y:auto">
+        <table id="fndFleetTbl"></table>
+      </div>
+    </div>
+
+  </div><!-- /calc-right -->
+
+</div><!-- /calc-3col -->
+</section>
 
 <script>
 "use strict";
@@ -1033,29 +1187,175 @@ const DEFAULT_VESSELS = [
   boomClearance:7, accomLength:8, craneBaseArea:160,
   cap1:200, r1:15, cap2:100, r2:30,
   conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"3,200t payload, 200t crane, 75m hook, 104m legs. User-confirmed." }
+  source:"3,200t payload, 200t crane, 75m hook, 104m legs. User-confirmed." },
+// ===== HEAVY-LIFT / CRANE / FLOATING VESSELS (foundation installation) =====
+// These vessels have no jack-up legs (nLegs:0) — they install foundations from a
+// floating or semi-submersible platform using DP or mooring, not by jacking up.
+// They are excluded from WTG jack-up gates automatically (nLegs=0 fails the leg
+// gate) but are fully usable in the Foundation/D-Cap tab.
+{ id:"aegir", name:"Aegir", cls:"Heerema monohull HLV, DP3", owner:"Heerema",
+  deckArea:5000, deckL:211.5, deckB:46.2, payload:4500, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:8.0, legReserve:0,
+  craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:110, boomLength:120, boomStowWidth:10, boomStowAngle:0,
+  boomClearance:15, accomLength:30, craneBaseArea:500,
+  cap1:5000, r1:30, cap2:2000, r2:70,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Wikipedia/Heerema confirmed: LOA 211.5m, beam 46.2m, depth 8.0m, DP3, payload 4,500t. Crane upgraded 4,000t to 5,000t in Mar 2021 with increased deck space. Split main crane block allows upending of tall structures and long piles." },
+
+{ id:"balder", name:"Balder", cls:"Heerema DCV, semi-sub", owner:"Heerema",
+  deckArea:4500, deckL:154, deckB:86, payload:9000, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:42, legReserve:0,
+  craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:120, boomLength:130, boomStowWidth:11, boomStowAngle:0,
+  boomClearance:16, accomLength:30, craneBaseArea:550,
+  cap1:6300, r1:30, cap2:3000, r2:70,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Wikipedia/Heerema confirmed: LOA 154m, beam 86m (118m incl J-Lay), depth 42m, DCV. 6,300t tandem lift in guyed mode." },
+
+{ id:"sleipnir", name:"Sleipnir", cls:"Heerema SSCV", owner:"Heerema",
+  deckArea:22440, deckL:220, deckB:102, payload:20000, deckStrength:20,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:32, legReserve:0,
+  craneType:"ped", cranePos:"fwd-both", boomStow:"long", legShape:"cir",
+  hookAboveDeck:150, boomLength:160, boomStowWidth:14, boomStowAngle:0,
+  boomClearance:20, accomLength:40, craneBaseArea:1200,
+  cap1:10000, r1:32, cap2:20000, r2:16,
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Wikipedia/Heerema confirmed: LOA 220m, beam 102m, draft 12-32m, 220x102m reinforced deck (22,440m2), two 10,000t Huisman cranes, tandem 20,000t. LNG dual-fuel." },
+
+{ id:"thialf", name:"Thialf", cls:"Heerema SSCV", owner:"Heerema",
+  deckArea:11000, deckL:201.6, deckB:88.4, payload:14200, deckStrength:18,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:49.5, legReserve:0,
+  craneType:"ped", cranePos:"fwd-both", boomStow:"long", legShape:"cir",
+  hookAboveDeck:130, boomLength:140, boomStowWidth:13, boomStowAngle:0,
+  boomClearance:18, accomLength:35, craneBaseArea:1000,
+  cap1:7100, r1:31, cap2:14200, r2:20,
+  conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"v",deckStrength:"e"},
+  source:"Wikipedia/Heerema confirmed: LOA 201.6m, beam 88.4m, depth 49.5m, draft max 31.6m. Two 7,100t cranes, tandem 14,200t at 31.2m radius. DP class III." },
+
+{ id:"orion", name:"Orion", cls:"DEME DP3 offshore installation vessel", owner:"DEME",
+  deckArea:6000, deckL:180, deckB:46, payload:12000, deckStrength:20,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:13, legReserve:0,
+  craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:178, boomLength:160, boomStowWidth:14, boomStowAngle:0,
+  boomClearance:22, accomLength:32, craneBaseArea:800,
+  cap1:5000, r1:30, cap2:1500, r2:76,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"v",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Ship-technology confirmed: HLC 295000 crane on 800t pedestal, 160m boom, 90m crane height, 5,000t to 178m height at >30m outreach, 1,500t aux crane. Has integrated Motion Compensated Pile Gripper (MCPG) — DP3, no anchors needed for monopile installation. No jack-up legs." },
+
+{ id:"pioneeringspirit", name:"Pioneering Spirit", cls:"Allseas split-hull HLV", owner:"Allseas",
+  deckArea:20000, deckL:382, deckB:124, payload:48000, deckStrength:20,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:30, legReserve:0,
+  craneType:"ped", cranePos:"fwd-both", boomStow:"long", legShape:"cir",
+  hookAboveDeck:90, boomLength:140, boomStowWidth:16, boomStowAngle:0,
+  boomClearance:25, accomLength:45, craneBaseArea:1500,
+  cap1:48000, r1:35, cap2:25000, r2:50,
+  foundationCapable:false,
+  conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"v",deckStrength:"e"},
+  source:"Wikipedia-confirmed: LOA 382m hull (477m incl. stinger), beam 124m, depth 30m. Purpose-built for single-lift topsides/jacket removal and installation (Jacket Lift System) and pipelay, not monopile foundation installation — no monopile gripper/upending spread, not used operationally for WTG foundation campaigns despite its lift capacity. DP-22." },
+
+{ id:"saipem7000", name:"Saipem 7000", cls:"Saipem SSCV", owner:"Saipem",
+  deckArea:9000, deckL:198, deckB:87, payload:15000, deckStrength:18,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:43.5, legReserve:0,
+  craneType:"ped", cranePos:"fwd-both", boomStow:"long", legShape:"cir",
+  hookAboveDeck:110, boomLength:130, boomStowWidth:13, boomStowAngle:0,
+  boomClearance:18, accomLength:34, craneBaseArea:900,
+  cap1:7000, r1:34, cap2:14000, r2:42,
+  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"v",deckStrength:"e"},
+  source:"Wikipedia/Saipem-confirmed: LOA 198m, beam 87m, deck 9,000m² at 15,000t deck load, two 7,000t AmClyde cranes, tandem 14,000t at 42m radius. Semi-submersible, DP3, J-lay tower. No jack-up legs." },
+
+{ id:"lesalizes", name:"Les Alizés", cls:"Jan De Nul monohull HLV", owner:"Jan De Nul",
+  deckArea:6500, deckL:189, deckB:39, payload:12000, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:13, legReserve:0,
+  craneType:"ped", cranePos:"aft-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:130, boomLength:145, boomStowWidth:13, boomStowAngle:0,
+  boomClearance:20, accomLength:28, craneBaseArea:700,
+  cap1:5000, r1:32, cap2:1500, r2:70,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Jan De Nul-confirmed: 5,000t main crane, transports and installs monopiles and jackets, DP2. Deck shows multiple large monopiles stored longitudinally along the hull in company imagery. No jack-up legs. Deck/hull dims estimated from vessel class." },
+
+{ id:"bokalift1", name:"BOKALIFT 1", cls:"Boskalis DP2 HLV", owner:"Boskalis",
+  deckArea:7095, deckL:217, deckB:43, payload:20000, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:11, legReserve:0,
+  craneType:"ped", cranePos:"aft-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:95, boomLength:100, boomStowWidth:9, boomStowAngle:0,
+  boomClearance:14, accomLength:25, craneBaseArea:400,
+  cap1:3000, r1:28, cap2:1200, r2:55,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Boskalis + AIS confirmed: LOA 217m, beam 43m, summer DWT 48,312t. Deck space 165m x 43m (7,095m2). 3,000t crane, DP2. Installed 102x3 pin piles + 65 jackets at East Anglia ONE, 12 XXL monopiles at South Fork Wind." },
+
+{ id:"bokalift2", name:"BOKALIFT 2", cls:"Boskalis DP2 HLV", owner:"Boskalis",
+  deckArea:7500, deckL:231, deckB:49, payload:22000, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:12, legReserve:0,
+  craneType:"ped", cranePos:"aft-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:105, boomLength:115, boomStowWidth:10, boomStowAngle:0,
+  boomClearance:15, accomLength:28, craneBaseArea:480,
+  cap1:4000, r1:28, cap2:1600, r2:60,
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Boskalis spec sheet + AIS confirmed: LOA 231m, beam 49m, summer DWT 54,827t, cargo deck 7,500m2, 4,000t crane at 28m radius, DP2, 146 persons." },
+
+{ id:"seawaystrashnov", name:"Seaway Strashnov", cls:"Subsea7/Seaway 7 monohull crane vessel", owner:"Seaway 7",
+  deckArea:4400, deckL:183, deckB:47, payload:11000, deckStrength:15,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:12, legReserve:0,
+  craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:100, boomLength:110, boomStowWidth:10, boomStowAngle:0,
+  boomClearance:15, accomLength:26, craneBaseArea:450,
+  cap1:5000, r1:30, cap2:2000, r2:60,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Royal IHC / Subsea 7 confirmed: monohull HLV, 5,000t main hoist fully revolving pedestal crane, DP3, 12 knot transit, patented hull shape. Formerly Oleg Strashnov." },
+
+{ id:"seawayyudin", name:"Seaway Yudin", cls:"Subsea7/Seaway 7 crane vessel, mooring", owner:"Seaway 7",
+  deckArea:3200, deckL:140, deckB:32, payload:5000, deckStrength:12,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:9, legReserve:0,
+  craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:80, boomLength:90, boomStowWidth:8, boomStowAngle:0,
+  boomClearance:12, accomLength:22, craneBaseArea:350,
+  cap1:2500, r1:26, cap2:1000, r2:50,
+  conf:{deckArea:"e",payload:"e",cap1:"e",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Subsea 7-confirmed: 8-point mooring system, working draft 8.9m, transport draft 5.5m, shallow-water installation. No DP — moored crane vessel. No jack-up legs. Crane capacity and deck dims estimated from class." },
+
+{ id:"alfalift", name:"Seaway Alfa Lift", cls:"Subsea7/Ulstein semi-sub DP2, smart deck", owner:"Seaway 7",
+  deckArea:10000, deckL:216.3, deckB:49, payload:22000, deckStrength:20,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:14.66, legReserve:0,
+  craneType:"ped", cranePos:"aft-stbd", boomStow:"long", legShape:"cir",
+  hookAboveDeck:140, boomLength:150, boomStowWidth:13, boomStowAngle:0,
+  boomClearance:20, accomLength:32, craneBaseArea:600,
+  cap1:3000, r1:30, cap2:1000, r2:76,
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"v",deckStrength:"e"},
+  source:"Ulstein/OceanEnergyResources-confirmed: LOA 216.3m, 10,000+m² 'smart deck' carrying up to 14 XXL monopiles (2,000t each) per trip, or 10×1,500t jackets, 3,000t crane at 30m / 1,000t at 76m, submersible to 14.66m depth, DP2. Installed at Dogger Bank in up to 35m water depth. No jack-up legs." },
+
+{ id:"hlvsvanen", name:"HLV Svanen", cls:"BW Ideol / Fred Olsen sheerleg crane vessel", owner:"Independent",
+  deckArea:2500, deckL:126, deckB:38, payload:5000, deckStrength:10,
+  legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:10, legReserve:0,
+  craneType:"ped", cranePos:"fwd-both", boomStow:"long", legShape:"cir",
+  hookAboveDeck:100, boomLength:0, boomStowWidth:0, boomStowAngle:0,
+  boomClearance:15, accomLength:20, craneBaseArea:600,
+  cap1:8700, r1:22, cap2:4500, r2:35,
+  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Fixed sheerleg crane (non-slewing), 8,700t lift capacity confirmed from public sources. Purpose-built for monopile installation, one of the original dedicated foundation vessels. No jack-up legs, no rotating boom — sheerleg fixed relative to hull." },
+
 ];
 
 
 const DEFAULT_TURBINES = [
-{ id:"t20", owner:"Other", name:"20 MW  |  300 m rotor  |  band 15-20 MW",
-  mw:20, rotor:300, hubHeight:165,
+{ id:"t21", owner:"Other", name:"21 MW  |  300 m rotor  |  band 21+ MW",
+  mw:21, rotor:300, hubHeight:187, towerLength:155, tipToHub:7,
   nacelleW:1250, nacelleArea:399, nacelleStowH:14,
   towerW:1400, towerArea:254, towerStowH:108, towerStacks:1,
   bladeW:75, bladeLength:145, rackArea:1091,
-  toolArea:623, conf:"e" },
+  toolArea:623, conf:"v" },
 { id:"t18", owner:"Other", name:"18 MW  |  280 m rotor  |  band 15-20 MW",
-  mw:18, rotor:280, hubHeight:158,
+  mw:18, rotor:280, hubHeight:172, towerLength:140.5, tipToHub:6.4,
   nacelleW:1125, nacelleArea:347, nacelleStowH:13,
   towerW:1300, towerArea:222, towerStowH:102, towerStacks:1,
   bladeW:68, bladeLength:135, rackArea:984,
-  toolArea:543, conf:"e" },
+  toolArea:543, conf:"v" },
 { id:"t15", owner:"Other", name:"15 MW  |  236 m rotor  |  band 15-20 MW",
-  mw:15, rotor:236, hubHeight:145,
+  mw:15, rotor:236, hubHeight:149.5, towerLength:119.3, tipToHub:5.2,
   nacelleW:865, nacelleArea:247, nacelleStowH:12,
   towerW:1100, towerArea:157, towerStowH:90, towerStacks:1,
   bladeW:55, bladeLength:115, rackArea:761,
-  toolArea:386, conf:"e" },
+  toolArea:386, conf:"v" },
 { id:"t14", owner:"Other", name:"14 MW  |  222 m rotor  |  band 12-15 MW",
   mw:14, rotor:222, hubHeight:140,
   nacelleW:820, nacelleArea:218, nacelleStowH:12,
@@ -1397,17 +1697,54 @@ function deckLayout(v,t,o){
 function compute(v, t, o){
   const R = {};
 
-  // ---- Gate 1: water depth
+  // ---- Gate 1 & 2 share the site air gap, so they are resolved together.
+  // Required hook height is the turbine's hub height, full stop — no added
+  // rigging/clearance margin on top (confirmed reference figures: 15 MW =
+  // 149.5 m, 18 MW = 172 m, 21 MW = 187 m — these ARE t.hubHeight directly).
   const legAvail = v.legLength - v.hullDepth - v.legReserve;
-  const legNeed  = o.waterDepth + o.tide + o.airGap + o.legPen;
-  R.leg = { avail:legAvail, need:legNeed, margin:legAvail-legNeed, pass:legAvail >= legNeed };
-
-  // ---- Gate 2: hook reach
   const hookKnown = v.hookAboveDeck > 0;
-  const hookAboveSea = v.hookAboveDeck + v.hullDepth + o.airGap;
-  const hookNeed = t.hubHeight + o.rigHeight + o.hookClearance;
+  const hookNeed = t.hubHeight;
+
+  let effAirGap = o.airGap;
+  let legNeed  = o.waterDepth + o.tide + effAirGap + o.legPen;
+  let hookAboveSea = v.hookAboveDeck + v.hullDepth + effAirGap;
+  let hookPass = hookKnown && hookAboveSea >= hookNeed;
+  let hookBoosted = false;
+  const AIRGAP_BOOST = 10;
+
+  // If the hook falls short on the nominal air gap, check whether jacking the
+  // hull an extra 10 m higher (more air gap) would close the gap — but only
+  // if the legs have enough spare length to support standing that much
+  // higher above the water in the first place. If both hold, apply the boost
+  // to BOTH gates consistently and flag it so the verdict tells the user.
+  if(hookKnown && !hookPass){
+    const boostAirGap = o.airGap + AIRGAP_BOOST;
+    const boostLegNeed = o.waterDepth + o.tide + boostAirGap + o.legPen;
+    const boostHookAboveSea = v.hookAboveDeck + v.hullDepth + boostAirGap;
+    if(boostHookAboveSea >= hookNeed && legAvail >= boostLegNeed){
+      effAirGap = boostAirGap;
+      legNeed = boostLegNeed;
+      hookAboveSea = boostHookAboveSea;
+      hookPass = true;
+      hookBoosted = true;
+    }
+  }
+
+  R.leg = { avail:legAvail, need:legNeed, margin:legAvail-legNeed, pass:legAvail >= legNeed, boosted:hookBoosted };
   R.hook = { known:hookKnown, avail:hookAboveSea, need:hookNeed,
-             margin:hookAboveSea-hookNeed, pass:hookKnown && hookAboveSea >= hookNeed };
+             margin:hookAboveSea-hookNeed, pass:hookPass,
+             boosted:hookBoosted, boostAmount:hookBoosted?AIRGAP_BOOST:0, effAirGap };
+
+  // ---- Gate 2b: tower single-piece lift (advisory) ----
+  // If the vessel's hook height above deck is less than the tower's own
+  // erected length, the tower cannot be lifted in one piece — it must be
+  // split into two or more sections. This is technically possible but is
+  // not recommended: extra lifts, extra rigging, reduced efficiency.
+  const towerLenKnown = t.towerLength > 0;
+  const towerSplitNeeded = towerLenKnown && hookKnown && (v.hookAboveDeck < t.towerLength);
+  R.towerSplit = { known:towerLenKnown, hookAboveDeck:v.hookAboveDeck, towerLength:t.towerLength,
+                   splitNeeded:towerSplitNeeded,
+                   margin: towerLenKnown ? v.hookAboveDeck - t.towerLength : 0 };
 
   // ---- Gate 3: crane capacity
   const lifts = [
@@ -1518,6 +1855,9 @@ function renderResults(){
   } else {
     why = `<b>${R.binding.nm} is the binding constraint.</b> All three installation gates pass, with ${n1(R.hook.margin)} m of hook margin and ${n0(R.crane.margin)} t of crane margin at ${n0(R.radius)} m radius.` + (R.area.nacFits ? '' : ` Nacelles will not fit under the ${n1(v.boomClearance)} m boom clearance, so the shadow is dead space.`) + (R.area.boomTooLong ? ` The ${n0(v.boomLength)} m boom will not stow longitudinally on a ${n0(v.deckL)} m deck.` : '');
   }
+  if(R.hook.boosted){
+    why += ` <b style="color:#B57314">Note:</b> the nominal ${n1(OPS.airGap)} m air gap was not enough to reach hub height, so this result assumes jacking ${n0(R.hook.boostAmount)} m higher (air gap raised to ${n1(R.hook.effAirGap)} m). Leg length still clears at this height, but confirm the extra jacking height is achievable for the actual site before relying on this.`;
+  }
   document.getElementById('verdictText').innerHTML = why;
   // Update strip
   const bc=document.getElementById('bindChip');
@@ -1526,14 +1866,20 @@ function renderResults(){
   // gates
   const g=[];
   g.push(gateCard("Water depth", R.leg.pass?"pass":"fail", R.leg.pass?"Clears by "+n1(R.leg.margin)+" m":"Short by "+n1(Math.abs(R.leg.margin))+" m",
-    `Leg below hull &nbsp;${n1(R.leg.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.leg.need)} m<br><span style="color:#7D8B93">${n0(OPS.waterDepth)} depth + ${n1(OPS.tide)} tide + ${n1(OPS.airGap)} air gap + ${n1(OPS.legPen)} penetration</span>`));
+    `Leg below hull &nbsp;${n1(R.leg.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.leg.need)} m<br><span style="color:#7D8B93">${n0(OPS.waterDepth)} depth + ${n1(OPS.tide)} tide + ${n1(R.leg.boosted?R.hook.effAirGap:OPS.airGap)} air gap${R.leg.boosted?' (boosted)':''} + ${n1(OPS.legPen)} penetration</span>`));
 
   if(!R.hook.known){
     g.push(gateCard("Hook reach", "warn", "Not verifiable",
-      `No hook height on file<br>Would need &nbsp;${n1(R.hook.need)} m above sea level<br><span style="color:#7D8B93">${n0(t.hubHeight)} hub + ${n1(OPS.rigHeight)} rigging + ${n1(OPS.hookClearance)} clearance</span>`));
+      `No hook height on file<br>Would need &nbsp;${n1(R.hook.need)} m above sea level<br><span style="color:#7D8B93">${n0(t.hubHeight)} hub height (hook must clear this directly)</span>`));
   } else {
     g.push(gateCard("Hook reach", R.hook.pass?"pass":"fail", R.hook.pass?"Clears by "+n1(R.hook.margin)+" m":"Short by "+n1(Math.abs(R.hook.margin))+" m",
-      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} above deck + ${n1(v.hullDepth)} hull + ${n1(OPS.airGap)} air gap</span>`));
+      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} above deck + ${n1(v.hullDepth)} hull + ${n1(R.hook.effAirGap)} air gap${R.hook.boosted?' (boosted +'+R.hook.boostAmount+'m)':''}</span>`));
+  }
+
+  if(R.towerSplit.known){
+    g.push(gateCard("Tower single-piece lift", R.towerSplit.splitNeeded?"warn":"pass",
+      R.towerSplit.splitNeeded?"Split required, "+n1(Math.abs(R.towerSplit.margin))+" m short":"One-piece lift, "+n1(R.towerSplit.margin)+" m spare",
+      `Hook above deck &nbsp;${n1(v.hookAboveDeck)} m<br>Tower length &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(t.towerLength)} m<br><span style="color:#7D8B93">${R.towerSplit.splitNeeded?'tower must be split into 2+ sections — extra lifts, not recommended':'tower ships and lifts as one continuous piece'}</span>`));
   }
 
   g.push(gateCard("Crane capacity", R.crane.pass?"pass":"fail", R.crane.pass?n0(R.crane.margin)+" t spare":"Short by "+n0(Math.abs(R.crane.margin))+" t",
@@ -1930,9 +2276,10 @@ function renderData(){
      <td style="max-width:340px;font-size:11.5px;color:#4A5D66">${v.source}</td></tr>`).join('');
 
   document.getElementById('tDataTable').innerHTML = `
-   <tr><th>Turbine</th><th class="n">Rotor m</th><th class="n">Hub m</th><th class="n">Nacelle t</th><th class="n">Tower t</th><th class="n">Blade t</th><th class="n">Tower SF m²</th><th class="n">Nacelle SF m²</th><th class="n">Rack m²</th><th class="n">Set weight t</th><th>Status</th></tr>` +
+   <tr><th>Turbine</th><th class="n">Rotor m</th><th class="n">Hub m</th><th class="n">Tower len. m</th><th class="n">Tip-to-hub m</th><th class="n">Nacelle t</th><th class="n">Tower t</th><th class="n">Blade t</th><th class="n">Tower SF m²</th><th class="n">Nacelle SF m²</th><th class="n">Rack m²</th><th class="n">Set weight t</th><th>Status</th></tr>` +
    TURBINES.map(t=>`<tr>
      <td><b>${t.mw} MW</b></td><td class="n">${n0(t.rotor)}</td><td class="n">${n0(t.hubHeight)}</td>
+     <td class="n">${t.towerLength?n1(t.towerLength):'&mdash;'}</td><td class="n">${t.tipToHub?n1(t.tipToHub):'&mdash;'}</td>
      <td class="n">${n0(t.nacelleW)}</td><td class="n">${n0(t.towerW)}</td>
      <td class="n">${n0(t.bladeW)}</td><td class="n">${n0(t.towerArea)}</td><td class="n">${n0(t.nacelleArea)}</td><td class="n">${n0(t.rackArea)}</td>
      <td class="n">${n0(t.nacelleW+t.towerW+3*t.bladeW)}</td>
@@ -2014,9 +2361,10 @@ function bind(){
     b.onclick = () => {
       document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-selected','false'));
       b.setAttribute('aria-selected','true');
-      ['calc','fleet','data','method'].forEach(id=>
+      ['calc','fleet','data','method','foundation'].forEach(id=>
         document.getElementById('tab-'+id).classList.toggle('hidden', id!==b.dataset.tab));
       refresh();
+      if(b.dataset.tab==='foundation') fndRender();
     };
   });
 
@@ -2307,6 +2655,1273 @@ function updateCraneR1Display(){
 
 bind(); fillVesselFields(); fillTurbineFields(); fillOpsFields(); craneRenderList(); refresh();
 
+
+
+// ===== FOUNDATION TAB v2 — Architecture-first rewrite =====
+// Single source of truth: STACKS[] model drives both top and side views.
+// No independent coordinates for sub-elements — everything derives from parent.
+
+// ── State ──────────────────────────────────────────────────────────────────
+let fndCurV = 0;
+
+// Stack model — the authoritative data for all rendering
+// Each stack: { id, mx, my, qty, isGripper:false }
+// mx/my are in MODEL space (metres from aft-centreline)
+let STACKS = [];
+let fndNextStackId = 1;
+
+// Equipment positions in model space (updated by drag, saved per vessel)
+let EQUIP = { gripper: null, hammer: null };
+
+// Drag state (unified — handles both stacks and equipment)
+const DRG = { active:false, what:null, id:null, svg:null, sc:1, x0:0, y0:0,
+              startSVGx:0, startSVGy:0, origMx:0, origMy:0, Z:null };
+
+// ── Input helpers ──────────────────────────────────────────────────────────
+// Default monopile spec used only when creating a NEW stack/pile — every
+// pile is individually editable afterward via its own row in the Arrangement
+// panel, so there is no single global "monopile definition" anymore.
+const DEFAULT_MP_DIA = 10, DEFAULT_MP_LEN = 85, DEFAULT_MP_WT = 1400;
+function mpDia(){ return DEFAULT_MP_DIA; }
+function mpLen(){ return DEFAULT_MP_LEN; }
+function mpWt(){  return DEFAULT_MP_WT; }
+function mpClr(){ return +document.getElementById('mp_clr').value || 4.0; }
+function eqGripDia(){ return +document.getElementById('eq_gripDia').value || 12; }
+function eqHamL(){  return +document.getElementById('eq_hamL').value || 12; }
+function eqHamW(){  return +document.getElementById('eq_hamW').value || 7; }
+function fndWD(){   return +document.getElementById('fnd_wd').value || 35; }
+function qtyReq(){  return +document.getElementById('mp_qty').value || 60; }
+
+// ── Vessel deck zones (shared geometry helper) ─────────────────────────────
+// ── Crane radius/SWL curve (user-configurable, like WTG tab) ──────────────
+let CRANE_POINTS = [];   // [{r, swl}] sorted by radius
+
+function fndInitCranePoints(v){
+  CRANE_POINTS = [];
+  if(v.r1 && v.cap1) CRANE_POINTS.push({r: v.r1,   swl: v.cap1});
+  if(v.r2 && v.cap2) CRANE_POINTS.push({r: v.r2,   swl: v.cap2});
+  if(CRANE_POINTS.length === 0) CRANE_POINTS.push({r: 30, swl: 1000});
+  CRANE_POINTS.sort((a,b) => a.r - b.r);
+  fndRenderCranePoints();
+}
+
+function swlAtRadius(r){
+  if(!CRANE_POINTS.length) return 0;
+  const pts = CRANE_POINTS.slice().sort((a,b)=>a.r-b.r);
+  if(r <= pts[0].r)   return pts[0].swl;
+  if(r >= pts[pts.length-1].r) return pts[pts.length-1].swl;
+  for(let i=0;i<pts.length-1;i++){
+    if(r>=pts[i].r && r<=pts[i+1].r){
+      const t=(r-pts[i].r)/(pts[i+1].r-pts[i].r);
+      return pts[i].swl*(1-t)+pts[i+1].swl*t;
+    }
+  }
+  return 0;
+}
+
+function fndRenderCranePoints(){
+  const el=document.getElementById('fndCranePointRows');
+  if(!el) return;
+  const COLORS=['#2196F3','#FF9800','#4CAF50','#9C27B0','#F44336'];
+  el.innerHTML = CRANE_POINTS.map((pt,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #2a3a44">
+      <span style="display:inline-block;width:10px;height:10px;background:${COLORS[i%COLORS.length]};border-radius:50%"></span>
+      <span style="font-size:10px;color:#7acce0;min-width:22px">R${i+1}</span>
+      <input type="number" value="${pt.r}" min="5" max="200" step="1"
+        style="width:54px;font-size:11px;padding:2px 4px;border:1px solid #345;background:#1a2e40;color:#fff;border-radius:3px"
+        onchange="CRANE_POINTS[${i}].r=+this.value;CRANE_POINTS.sort((a,b)=>a.r-b.r);fndRender();">
+      <span style="font-size:10px;color:#888">m</span>
+      <input type="number" value="${pt.swl}" min="50" max="20000" step="50"
+        style="width:64px;font-size:11px;padding:2px 4px;border:1px solid #345;background:#1a2e40;color:#fff;border-radius:3px"
+        onchange="CRANE_POINTS[${i}].swl=+this.value;fndRender();">
+      <span style="font-size:10px;color:#888">t</span>
+      <button onclick="CRANE_POINTS.splice(${i},1);fndRenderCranePoints();fndRender();"
+        style="margin-left:auto;padding:0 5px;font-size:11px;background:none;border:1px solid #556;border-radius:3px;color:#889;cursor:pointer">×</button>
+    </div>`).join('');
+}
+
+function fndAddCranePoint(){
+  const last=CRANE_POINTS.slice(-1)[0]||{r:30,swl:1000};
+  CRANE_POINTS.push({r:Math.round(last.r*1.4), swl:Math.round(last.swl*0.6)});
+  fndRenderCranePoints(); fndRender();
+}
+
+// Spreader bar weight (t)
+function fndSpreadW(){ return +document.getElementById('fnd_spreadW')?.value || 150; }
+// Usable payload (deduct fuel/stores from DWT if needed)
+function fndUsablePayload(v){
+  // If the vessel has a payload field from spec, use it directly.
+  // Otherwise deduct 1500t from the larger DWT figure for fuel/provisions.
+  return v.payload || Math.max(0, (v.dwt || v.payload || 5000) - 1500);
+}
+
+// ── Crane position override (side selector + free drag on floaters) ──────
+// null = use vessel default (v.cranePos, on the aft leg for jack-ups).
+// Jack-up: side selector only changes port/stbd — crane still sits ON the aft leg.
+// Floater: crane can be freely dragged anywhere (no leg constraint).
+let CRANE_OVERRIDE = null;   // {mx, my} in model space, floaters only
+function fndCraneSideSelected(){
+  const el = document.getElementById('fnd_craneSide');
+  return el ? el.value : null;
+}
+
+function fndZones(v){
+  const L = v.deckL || 130;
+  const B = v.deckB  || 40;
+
+  // ── Deck zone geometry ──────────────────────────────────────────────────
+  // Typical WTIV layout: accommodation ~20m at bow end, crane/equipment ~10m
+  // at aft end, bow taper ~10m. Cargo zone in between.
+  const accom    = v.accomLength || 20;   // fwd accommodation block
+  const aftEquip = 10;                    // aft equipment/crane base zone
+  const bowTaper = L * 0.07;             // bow shape not usable for cargo
+  const cargoAft = aftEquip;
+  const cargoEnd = L - accom - bowTaper * 0.4;
+  const cargoLen = cargoEnd - cargoAft;
+
+  const nLegs  = v.nLegs || 0;
+  const isFloat = (nLegs === 0);
+
+  // ── Leg geometry — calibrated to Cadeler A-class as reference ──────────
+  // A-class: beam 60m, 3×Ø12m monopiles fit between legs = inter-leg ~47m usable.
+  // Leg housing diameter ~13m (legR ~6.5m), inset ~20% of beam from each side.
+  const legR  = Math.min(B * 0.11, 7.0);   // leg housing radius: ~13m dia for A-class
+  const inset = B * 0.20;                   // leg centre inboard from hull: 12m for 60m beam
+
+  // Leg x-positions: aft pair at 20%, fwd pair at 70% of cargo zone from aft.
+  // This gives inter-leg distance of ~50% of cargoLen, correct for 3×12m piles.
+  const legs = [];
+  if(nLegs > 0){
+    const aftLegX = cargoAft + cargoLen * 0.20;
+    const fwdLegX = cargoAft + cargoLen * 0.70;
+    const xPositions = nLegs === 6
+      ? [aftLegX, (aftLegX + fwdLegX) / 2, fwdLegX]
+      : [aftLegX, fwdLegX];
+    xPositions.forEach((lx, xi) => {
+      [inset, B - inset].forEach(ly => {
+        legs.push({ mx: lx, my: ly, r: legR, aft: xi === 0 });
+      });
+    });
+  }
+
+  // ── Crane position ───────────────────────────────────────────────────────
+  // Jack-up: crane rides on the aft leg (encircling). Side (port/stbd) can be
+  // overridden via the Foundation panel selector, independent of the WTG tab's
+  // vessel-level cranePos, in case the published spec is uncertain.
+  // Floater: crane is a free-standing pedestal — user can drag it anywhere,
+  // or use the side selector for a quick port/stbd default.
+  const sideSel   = fndCraneSideSelected();
+  const cranePort = ((sideSel || v.cranePos || 'aft-stbd')).includes('port');
+  let cl;
+  if(isFloat){
+    if(CRANE_OVERRIDE){
+      cl = { mx: CRANE_OVERRIDE.mx, my: CRANE_OVERRIDE.my };
+    } else {
+      // Default floater crane: forward third of cargo zone, chosen side
+      const craneMx = cargoAft + cargoLen * 0.30;
+      const craneMy = cranePort ? B * 0.18 : B * 0.82;
+      cl = { mx: craneMx, my: craneMy };
+    }
+  } else {
+    const aftLegs = legs.filter(l => l.aft);
+    const craneMx = aftLegs.length ? aftLegs[0].mx : cargoAft + cargoLen * 0.20;
+    const craneMy = cranePort ? inset : B - inset;
+    cl = { mx: craneMx, my: craneMy };
+  }
+  const cRzone = legR * 1.55;   // slewing envelope shown as dashed circle
+
+  const bow = L * 0.09;  // bow taper length (for drawing only)
+  return { L, B, bow, accom, cargoAft, cargoEnd, cargoLen, legs, cl, legR, cRzone, nLegs, isFloat, inset };
+}
+
+// ── Default stack layout (vessel-aware) ────────────────────────────────────
+function fndDefaultStacks(v, dia){
+  STACKS = [];
+  fndNextStackId = 1;
+  const Z = fndZones(v);
+  const clr = mpClr();
+  const mkPile = () => ({ dia, len: mpLen(), wt: mpWt() });
+
+  if(Z.isFloat){
+    // ── Floating vessel: piles side by side along ship length ─────────────
+    // Pitch in x = dia + clearance (default 4m for floaters).
+    const pitch  = dia + clr;
+    const zStart = Z.cargoAft + dia/2 + 2;
+    const zEnd   = Z.cargoEnd - dia/2 - 2;
+    const nFit   = Math.max(1, Math.floor((zEnd - zStart + pitch) / pitch));
+    const nPlace = Math.min(nFit, 5);
+    const total  = (nPlace - 1) * pitch;
+    const startMx = (Z.cargoAft + Z.cargoEnd) / 2 - total / 2;
+    for(let i = 0; i < nPlace; i++){
+      STACKS.push({ id: fndNextStackId++, mx: startMx + i * pitch, my: Z.B / 2, piles: [mkPile()] });
+    }
+
+  } else {
+    // ── Jack-up vessel: piles between the aft and fwd leg pairs ───────────
+    // Piles stored transversely (LENGTH across beam). Pitch in x = dia + 0.8m.
+    // Usable x-zone: aftLegX + legR + 0.5m  →  fwdLegX - legR - 0.5m
+    const jackupGap = 0.8;   // tight clearance between adjacent piles
+    const pitch = dia + jackupGap;
+    const aftLegs = Z.legs.filter(l => l.aft);
+    const fwdLegs = Z.legs.filter(l => !l.aft);
+    const zAft = aftLegs.length ? Math.max(...aftLegs.map(l => l.mx)) + Z.legR + 0.5 : Z.cargoAft + dia/2;
+    const zFwd = fwdLegs.length ? Math.min(...fwdLegs.map(l => l.mx)) - Z.legR - 0.5 : Z.cargoEnd - dia/2;
+    const zoneLen = zFwd - zAft;
+    const nFit    = Math.max(1, Math.floor((zoneLen + jackupGap) / pitch));
+
+    // Default stack height (qty):
+    // Cadeler A-class reference: crane in rest position limits stacking to 2 high
+    // for large piles (≥10m dia) on vessels with large cranes (cap1 ≥ 2000t).
+    // Smaller piles or smaller vessels = 1 high by default (user can increase).
+    const bigCrane = (v.cap1 || 0) >= 2000;
+    const defaultQty = (!Z.isFloat && bigCrane && dia >= 10) ? 2 : 1;
+
+    // Large-crane vessels (Cadeler A-class, Boreas) use exactly 3 storage
+    // clusters in practice (aft stack, upending single, fwd stack) — not
+    // however many positions the raw pitch arithmetic would allow — giving
+    // 2+1+2 = 5 monopiles, confirmed for Wind Ace/Ally/Apex and Boreas.
+    const nPlace  = (bigCrane && dia >= 10) ? Math.min(nFit, 3) : Math.min(nFit, 6);
+    const total   = (nPlace - 1) * pitch;
+    const startMx = (zAft + zFwd) / 2 - total / 2;
+
+    for(let i = 0; i < nPlace; i++){
+      const qty = defaultQty;
+      const piles = Array.from({length: qty}, () => mkPile());
+      STACKS.push({ id: fndNextStackId++, mx: startMx + i * pitch, my: Z.B / 2, piles });
+    }
+
+    // Classic "2 + 1 + 2 = 5" pattern: when exactly 3 stack positions fit and
+    // the default is 2-high (large crane, large diameter), the middle position
+    // is used for the single upending pile rather than a second stacked pair
+    // — matching confirmed Cadeler A-class practice (Wind Ace/Ally/Apex) and
+    // Boreas, both of which carry 5 monopiles at this diameter, not 6.
+    if(nPlace === 3 && defaultQty === 2){
+      STACKS[1].piles = [mkPile()];
+    }
+  }
+}
+
+// Helpers for reading a stack's aggregate properties from its piles array
+function fndStackQty(st){ return st.piles.length; }
+function fndStackMaxDia(st){ return Math.max(...st.piles.map(p=>p.dia)); }
+function fndStackMaxLen(st){ return Math.max(...st.piles.map(p=>p.len)); }
+
+function fndAddPileToStack(si){
+  const st = STACKS[si]; if(!st) return;
+  const last = st.piles[st.piles.length-1] || {dia:mpDia(), len:mpLen(), wt:mpWt()};
+  st.piles.push({...last});
+  fndRenderStackRows();
+  fndRender();
+}
+function fndRemovePileFromStack(si){
+  const st = STACKS[si]; if(!st) return;
+  if(st.piles.length>1) st.piles.pop();
+  fndRenderStackRows();
+  fndRender();
+}
+
+
+
+// ── Stack UI rows ──────────────────────────────────────────────────────────
+function fndRenderStackRows(){
+  const el=document.getElementById('fndStackRows');
+  if(!el)return;
+  const isFloat=(VESSELS[fndCurV]||{nLegs:0}).nLegs===0;
+  el.innerHTML=STACKS.map((st,si)=>{
+    const pileRows = st.piles.map((p,pi)=>`
+      <div style="display:flex;align-items:center;gap:4px;padding:2px 0 2px 14px">
+        <span style="font-size:9px;color:#678;min-width:38px">MP ${pi+1}</span>
+        <span style="font-size:9px;color:#789">Ø</span>
+        <input type="number" value="${p.dia}" min="4" max="14" step="0.1"
+          style="width:42px;font-size:10px;padding:1px 3px;border:1px solid #345;background:#12222f;color:#dde;border-radius:3px"
+          onchange="STACKS[${si}].piles[${pi}].dia=+this.value||10;fndRender();" title="Diameter (m) — this monopile only">
+        <span style="font-size:9px;color:#789">L</span>
+        <input type="number" value="${p.len}" min="20" max="140" step="1"
+          style="width:44px;font-size:10px;padding:1px 3px;border:1px solid #345;background:#12222f;color:#dde;border-radius:3px"
+          onchange="STACKS[${si}].piles[${pi}].len=+this.value||80;fndRender();" title="Length (m) — this monopile only">
+        <span style="font-size:9px;color:#789">Wt</span>
+        <input type="number" value="${p.wt}" min="100" max="4000" step="50"
+          style="width:50px;font-size:10px;padding:1px 3px;border:1px solid #345;background:#12222f;color:#dde;border-radius:3px"
+          onchange="STACKS[${si}].piles[${pi}].wt=+this.value||1000;fndRender();" title="Weight (t) — this monopile only">
+        ${st.piles.length>1 ? `<button onclick="STACKS[${si}].piles.splice(${pi},1);fndRenderStackRows();fndRender();"
+          style="margin-left:auto;padding:0 5px;font-size:10px;background:none;border:1px solid #556;border-radius:3px;color:#889;cursor:pointer" title="Remove this monopile">×</button>` : ''}
+      </div>`).join('');
+    return `
+    <div style="padding:5px 0;border-bottom:1px solid #2a3a44">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+        <span style="font-size:11px;color:#7acce0;font-weight:700;min-width:20px">Pos ${si+1}</span>
+        <span style="font-size:10px;color:#8aa">${st.piles.length} pile${st.piles.length>1?'s':''} stacked</span>
+        <span style="font-size:9px;color:#556;margin-left:auto">x${st.mx.toFixed(0)}m y${st.my.toFixed(0)}m</span>
+      </div>
+      ${pileRows}
+      ${!isFloat ? `<div style="padding-left:14px;margin-top:2px">
+        <button onclick="fndAddPileToStack(${si})" style="padding:1px 8px;font-size:10px;background:#1a4a3a;color:#bfe;border:none;border-radius:3px;cursor:pointer">+ Stack another monopile here</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function fndAddStack(){
+  const v=VESSELS[fndCurV]; if(!v)return;
+  const Z=fndZones(v);
+  STACKS.push({id:fndNextStackId++, mx:(Z.cargoAft+Z.cargoEnd)/2, my:Z.B/2,
+    piles:[{dia:mpDia(), len:mpLen(), wt:mpWt()}]});
+  fndRenderStackRows();
+  fndRender();
+}
+function fndRemoveStack(){
+  if(STACKS.length>1) STACKS.pop();
+  fndRenderStackRows();
+  fndRender();
+}
+
+// ── Vessel selector ────────────────────────────────────────────────────────
+function fndFillVesselSel(){
+  const vs=document.getElementById('fndVesselSel');
+  if(!vs)return;
+  const ownerGroups={};
+  VESSELS.forEach((v,i)=>{ const o=v.owner||'Other'; if(!ownerGroups[o]) ownerGroups[o]=[]; ownerGroups[o].push({v,i}); });
+  const ORDER=['Cadeler','Van Oord','Jan De Nul','FOWIC','Seaway 7','Dominion Energy','DEME',
+               'Heerema','Boskalis','Allseas','Saipem','Norse Offshore','ZITON','Hyundai',
+               'Shimizu','CDWE','GMS','Chinese Fleet','Independent','Other'];
+  let html=''; const seen=new Set();
+  ORDER.forEach(o=>{ if(!ownerGroups[o])return; seen.add(o);
+    html+=`<optgroup label="${o}">`+ownerGroups[o].map(({v,i})=>`<option value="${i}">${v.name}</option>`).join('')+'</optgroup>';});
+  Object.keys(ownerGroups).filter(o=>!seen.has(o)).forEach(o=>{
+    html+=`<optgroup label="${o}">`+ownerGroups[o].map(({v,i})=>`<option value="${i}">${v.name}</option>`).join('')+'</optgroup>';});
+  vs.innerHTML=html; vs.value=fndCurV;
+  vs.onchange=e=>{ fndCurV=+e.target.value; EQUIP={gripper:null,hammer:null}; CRANE_OVERRIDE=null;
+    const nv=VESSELS[fndCurV];
+    const sideEl=document.getElementById('fnd_craneSide'); if(sideEl) sideEl.value = nv.cranePos || 'aft-stbd';
+    fndInitCranePoints(nv); fndDefaultStacks(nv, mpDia()); fndRenderStackRows(); fndRender(); };
+}
+
+// ── SVG coordinate helpers (stored on svg dataset by renderer) ─────────────
+function svgToModel(svg, cx, cy){
+  const sc=parseFloat(svg.dataset.sc||'4'), x0=parseFloat(svg.dataset.x0||'0'), y0=parseFloat(svg.dataset.y0||'0');
+  return { mx:(cx-x0)/sc, my:(cy-y0)/sc };
+}
+function modelToSVG(svg, mx, my){
+  const sc=parseFloat(svg.dataset.sc||'4'), x0=parseFloat(svg.dataset.x0||'0'), y0=parseFloat(svg.dataset.y0||'0');
+  return { x:x0+mx*sc, y:y0+my*sc };
+}
+function svgClientPt(svg, cx, cy){
+  const pt=svg.createSVGPoint(); pt.x=cx; pt.y=cy;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+// ── Drag system ───────────────────────────────────────────────────────────
+function fndStartDrag(e, svg, what, id, origMx, origMy){
+  e.preventDefault();
+  const pt=svgClientPt(svg, e.clientX||e.touches?.[0]?.clientX||0, e.clientY||e.touches?.[0]?.clientY||0);
+  Object.assign(DRG,{active:true,what,id,svg,startSVGx:pt.x,startSVGy:pt.y,origMx,origMy,
+    sc:parseFloat(svg.dataset.sc||'4'),x0:parseFloat(svg.dataset.x0||'0'),y0:parseFloat(svg.dataset.y0||'0'),
+    Z:fndZones(VESSELS[fndCurV])});
+}
+function fndMoveDrag(e){
+  if(!DRG.active)return;
+  const cx=e.clientX||(e.touches?.[0]?.clientX||0), cy=e.clientY||(e.touches?.[0]?.clientY||0);
+  const pt=svgClientPt(DRG.svg,cx,cy);
+  const dx=(pt.x-DRG.startSVGx)/DRG.sc;
+  const dy=(pt.y-DRG.startSVGy)/DRG.sc;
+  const snap=0.5;
+  let nmx=Math.round((DRG.origMx+dx)/snap)*snap;
+  let nmy=Math.round((DRG.origMy+dy)/snap)*snap;
+  const Z=DRG.Z;
+  const dia=mpDia();
+  if(DRG.what==='stack'){
+    // Piles can move freely in x; y is always beam-centre for jack-up (full transverse),
+    // or freely for floaters. Allow reasonable overhang in x.
+    nmx=Math.max(Z.cargoAft - dia, Math.min(Z.cargoEnd + dia, nmx));
+    if(!Z.isFloat) nmy = Z.B/2; // jack-up: pile always centred transversely
+    else nmy=Math.max(-dia*0.5, Math.min(Z.B+dia*0.5, nmy));
+    const st=STACKS.find(s=>s.id===DRG.id);
+    if(st){st.mx=nmx; st.my=nmy;}
+  } else if(DRG.what==='gripper'){
+    // Gripper can move freely (can hang off side)
+    EQUIP.gripper={mx:nmx, my:nmy};
+  } else if(DRG.what==='hammer'){
+    nmx=Math.max(0, Math.min(Z.L, nmx));
+    nmy=Math.max(0, Math.min(Z.B, nmy));
+    EQUIP.hammer={mx:nmx, my:nmy};
+  } else if(DRG.what==='crane'){
+    // Crane is freely draggable only for floaters (no leg constraint).
+    // Jack-up crane position is fixed to the aft leg — side selector controls port/stbd.
+    nmx=Math.max(Z.cargoAft, Math.min(Z.cargoEnd, nmx));
+    nmy=Math.max(0, Math.min(Z.B, nmy));
+    CRANE_OVERRIDE={mx:nmx, my:nmy};
+  }
+  fndRender();
+}
+function fndEndDrag(){ if(DRG.active){DRG.active=false;} }
+
+function attachDrag(el, svg, what, id, origMx, origMy){
+  el.style.cursor='grab';
+  el.addEventListener('mousedown',  e=>fndStartDrag(e,svg,what,id,origMx,origMy));
+  el.addEventListener('touchstart', e=>{e.preventDefault();fndStartDrag(e,svg,what,id,origMx,origMy);},{passive:false});
+}
+
+// ── TOP VIEW renderer ─────────────────────────────────────────────────────
+// JACK-UP: piles lie transversely (length spans port→stbd).
+//   Top view: long rectangle, width=mpLen (spanning beam), height=mpDia.
+//   Pile centre x = st.mx (fore-aft), pile spans the full beam.
+// FLOATER: piles lie longitudinally (length spans aft→bow).
+//   Top view: long rectangle, height=mpDia, spanning aft→bow.
+
+function fndDefaultEquip(v, Z, dia){
+  const gDia=eqGripDia(), hamL=eqHamL();
+  let gripper, hammer;
+  if(!Z.isFloat){
+    // Jack-up: gripper hangs off aft-port side, hammer aft-port inside hull
+    gripper = { mx: Z.cargoAft + 2,        my: Z.B + gDia*0.35 };
+    hammer  = { mx: Z.cargoAft + hamL*0.6, my: (Z.inset||Z.B*0.12) * 0.55 };
+  } else {
+    // Floater: gripper off port side near midship, hammer alongside
+    const equipX = Z.cargoAft + (Z.cargoLen||80) * 0.35;
+    gripper = { mx: equipX,                  my: Z.B + gDia*0.4 };
+    hammer  = { mx: equipX + gDia*0.6 + hamL*0.5, my: Z.B*0.15 };
+  }
+  return { gripper, hammer };
+}
+
+function drawTopView(v, Z){
+  const svg = document.getElementById('fndTopSVG');
+  if(!svg) return;
+
+  const W=760, H=440, padX=44, padY=36;
+  // Vessel proportions: draw hull+bow, and a separate accommodation block
+  const accomL = Z.accom;                     // accommodation block length
+  const bowL   = Z.L * 0.035;                 // shorter, tighter bow taper
+  const totalL = Z.L + bowL;
+  const sc  = Math.min((W-2*padX)/totalL, (H-2*padY)/Z.B);
+  const x0  = (W - totalL*sc)/2;
+  const y0  = (H - Z.B*sc)/2;
+  svg.dataset.sc = sc.toFixed(6);
+  svg.dataset.x0 = x0.toFixed(4);
+  svg.dataset.y0 = y0.toFixed(4);
+  const X = m => x0 + m*sc;
+  const Y = m => y0 + m*sc;
+  const px= m => m*sc;
+
+  const dia=mpDia(), len=mpLen();
+  const isFloat=Z.isFloat;
+  let o=[];
+
+  // Background
+  o.push(`<rect width="${W}" height="${H}" fill="#dde4e8"/>`);
+
+  // Sea / water area outside hull
+  o.push(`<rect width="${W}" height="${H}" fill="#c8d8e4" rx="4"/>`);
+
+  // ── Hull main body ──────────────────────────────────────────────────────
+  o.push(`<rect x="${X(0)}" y="${Y(0)}" width="${px(Z.L)}" height="${px(Z.B)}"
+    fill="#f0ede5" stroke="#333" stroke-width="2"/>`);
+  // Bow taper
+  o.push(`<polygon points="${X(Z.L)},${Y(0)} ${X(totalL)},${Y(Z.B/2)} ${X(Z.L)},${Y(Z.B)}"
+    fill="#f0ede5" stroke="#333" stroke-width="2"/>`);
+  // Aft transom
+  o.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(Z.B)}" stroke="#333" stroke-width="3"/>`);
+  // Deck centreline
+  o.push(`<line x1="${X(0)}" y1="${Y(Z.B/2)}" x2="${X(totalL*0.85)}" y2="${Y(Z.B/2)}"
+    stroke="#aaa" stroke-width="0.8" stroke-dasharray="12 5"/>`);
+
+  // ── Accommodation block (forward of fwd legs) ─────────────────────────
+  // Spans from cargoEnd to near the bow. Represents the bridge/superstructure.
+  const accomStart = Z.cargoEnd - 2;   // shifted aft, matches side view
+  const accomEnd   = Z.L - 12;          // shifted aft, matches side view
+  if(accomEnd > accomStart + 4){
+    const aW = px(accomEnd - accomStart), aH = px(Z.B * 0.80);
+    const aX = X(accomStart), aY = Y(Z.B*0.10);
+    // Main superstructure block
+    o.push(`<rect x="${aX}" y="${aY}" width="${aW}" height="${aH}"
+      fill="#d8d4cc" stroke="#555" stroke-width="1.2" rx="2"/>`);
+    // Deck levels (horizontal lines inside)
+    for(let di=1;di<4;di++){
+      o.push(`<line x1="${aX}" y1="${aY+aH*di/4}" x2="${aX+aW}" y2="${aY+aH*di/4}"
+        stroke="#bbb" stroke-width="0.6"/>`);
+    }
+    // Bridge windows (port side)
+    const winY = aY + aH*0.12;
+    const winH = aH * 0.22;
+    for(let wi=0;wi<4;wi++){
+      o.push(`<rect x="${aX+aW*0.05+wi*aW*0.2}" y="${winY}" width="${aW*0.14}" height="${winH}"
+        fill="#a8c8d8" stroke="#666" stroke-width="0.8" rx="1"/>`);
+    }
+    // Helideck (circle on top = forward end in top view)
+    const hdR = px(Math.min(Z.B*0.25, accomL*0.35));
+    const hdX = X(accomEnd - (accomEnd-accomStart)*0.4);
+    const hdY = Y(Z.B/2);
+    o.push(`<circle cx="${hdX}" cy="${hdY}" r="${hdR}" fill="#b8c4aa" stroke="#666" stroke-width="1.2"/>`);
+    o.push(`<circle cx="${hdX}" cy="${hdY}" r="${hdR*0.7}" fill="none" stroke="#666" stroke-width="0.8" stroke-dasharray="4 3"/>`);
+    o.push(`<text x="${hdX}" y="${hdY+4}" fill="#555" font-size="8" text-anchor="middle" font-family="sans-serif">H</text>`);
+  }
+
+  // ── Side hull stripe (visual realism) ──────────────────────────────────
+  o.push(`<rect x="${X(0)}" y="${Y(0)}" width="${px(Z.L)}" height="${px(Z.B*0.06)}"
+    fill="#8a4a2a" opacity="0.35"/>`);  // boot-topping stripe PS
+  o.push(`<rect x="${X(0)}" y="${Y(Z.B*0.94)}" width="${px(Z.L)}" height="${px(Z.B*0.06)}"
+    fill="#8a4a2a" opacity="0.35"/>`);  // boot-topping stripe SB
+
+  // Labels
+  o.push(`<text x="${X(0)-5}" y="${Y(Z.B/2)+4}" fill="#444" font-size="10" text-anchor="end" font-family="sans-serif" font-weight="600">AFT</text>`);
+  o.push(`<text x="${X(totalL)+4}" y="${Y(Z.B/2)+4}" fill="#444" font-size="10" font-family="sans-serif" font-weight="600">BOW</text>`);
+  o.push(`<text x="${X(4)}" y="${Y(0)-5}" fill="#556" font-size="9" font-family="sans-serif">PS</text>`);
+  o.push(`<text x="${X(4)}" y="${Y(Z.B)+13}" fill="#556" font-size="9" font-family="sans-serif">SB</text>`);
+
+  // ── Jack-up legs ────────────────────────────────────────────────────────
+  if(!isFloat && Z.nLegs>0){
+    Z.legs.forEach((lg, li)=>{
+      const cx=X(lg.mx), cy=Y(lg.my), r=px(lg.r);
+      // Outer slewing envelope (subtle dashed ring)
+      o.push(`<circle cx="${cx}" cy="${cy}" r="${r*1.5}" fill="none" stroke="#999"
+        stroke-width="0.7" stroke-dasharray="5 4" opacity="0.5"/>`);
+      // Leg housing (hexagonal, dark)
+      const pts=[];
+      for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/6; pts.push(`${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`); }
+      o.push(`<polygon points="${pts.join(' ')}" fill="#b8b0a0" stroke="#444" stroke-width="1.8"/>`);
+      // Inner bracing
+      const pts2=[];
+      for(let i=0;i<6;i++){ const a=i*Math.PI/3; pts2.push(`${(cx+r*0.58*Math.cos(a)).toFixed(1)},${(cy+r*0.58*Math.sin(a)).toFixed(1)}`); }
+      o.push(`<polygon points="${pts2.join(' ')}" fill="#c8c0b0" stroke="#555" stroke-width="0.9"/>`);
+      for(let i=0;i<3;i++){
+        const a1=i*Math.PI/3, a2=a1+Math.PI;
+        o.push(`<line x1="${(cx+r*0.55*Math.cos(a1)).toFixed(1)}" y1="${(cy+r*0.55*Math.sin(a1)).toFixed(1)}"
+          x2="${(cx+r*0.55*Math.cos(a2)).toFixed(1)}" y2="${(cy+r*0.55*Math.sin(a2)).toFixed(1)}" stroke="#666" stroke-width="0.8"/>`);
+      }
+      const legLabel = ['LEG 1','LEG 2','LEG 3','LEG 4','LEG 5','LEG 6'][li]||`L${li+1}`;
+      o.push(`<text x="${cx}" y="${cy+r*0.3}" fill="#333" font-size="${Math.max(6,r*0.36)}"
+        text-anchor="middle" font-family="sans-serif" font-weight="700">${legLabel}</text>`);
+    });
+  }
+
+  // ── Crane ────────────────────────────────────────────────────────────────
+  // Position comes from Z.cl (single source of truth). Visualization style
+  // matches the WTG Calculator top view: filled slew-radius disc, a boom
+  // direction arrow with a translucent envelope, and R1/clearance labels.
+  {
+    const crX=X(Z.cl.mx), crY=Y(Z.cl.my);
+    const crR=px(Z.legR*0.55);
+    const R1=v.r1||CRANE_POINTS[0]?.r||30;
+    const SWL1=v.cap1||CRANE_POINTS[0]?.swl||0;
+
+    // Filled slew-radius disc (WTG style: cream fill, brown border)
+    o.push(`<circle cx="${crX}" cy="${crY}" r="${px(R1)}" fill="#F2E7D0" opacity="0.55" stroke="#B57314" stroke-width="1.5"/>`);
+    // Extra crane points as thinner dashed rings
+    const CPCOLORS=['#B57314','#2196F3','#4CAF50','#9C27B0'];
+    CRANE_POINTS.forEach((pt,ci)=>{
+      if(ci===0) return;
+      o.push(`<circle cx="${crX}" cy="${crY}" r="${px(pt.r)}" fill="none"
+        stroke="${CPCOLORS[ci%CPCOLORS.length]}" stroke-width="1" stroke-dasharray="5 4" opacity="0.45"/>`);
+    });
+
+    // NOTE: the boom-over-monopiles overlay is drawn LATER, after the piles
+    // themselves, so it can be genuinely translucent and still show the pile
+    // footprints underneath (SVG layers in document order — drawing it here,
+    // before the piles, would have hidden it completely regardless of opacity).
+
+    // Crane leg glyph + pedestal
+    const dragAttr = isFloat ? `data-drag="crane" data-mx="${Z.cl.mx.toFixed(2)}" data-my="${Z.cl.my.toFixed(2)}" style="cursor:grab"` : '';
+    o.push(`<g id="fndCraneEl" ${dragAttr}>
+      <rect x="${crX-crR}" y="${crY-crR}" width="${crR*2}" height="${crR*2}" rx="2"
+        fill="#c9a86a" stroke="#7a6a3a" stroke-width="1.5"/>
+      <circle cx="${crX}" cy="${crY}" r="${crR*0.55}" fill="#e8dcc4" stroke="#7a6a3a" stroke-width="1"/>
+      ${isFloat?`<title>Crane — drag to reposition</title>`:`<title>Crane — rides on the aft leg; use the crane side selector to change port/starboard</title>`}
+    </g>`);
+
+    // Labels — WTG style
+    o.push(`<text x="${crX}" y="${crY-px(R1)-6}" fill="#8A5A0F" font-size="7"
+      text-anchor="middle" font-family="sans-serif" font-weight="700">CRANE, NO CARGO</text>`);
+    o.push(`<text x="${crX}" y="${crY+crR+11}" fill="#333" font-size="7"
+      text-anchor="middle" font-family="sans-serif" font-weight="700">R1 ${R1}m/${SWL1}t</text>`);
+
+    // Room-to-bow clearance annotation (distance from crane to end of cargo zone)
+    const roomM = (Z.cargoEnd - Z.cl.mx).toFixed(0);
+    const midX = X((Z.cl.mx+Z.cargoEnd)/2);
+    o.push(`<text x="${midX}" y="${Y(Z.B*0.06)}" fill="#8A5A0F" font-size="7"
+      text-anchor="middle" font-family="sans-serif">ROOM ${roomM}m &#8594;</text>`);
+  }
+
+  // ── Hammer (aft-port inside hull) ─────────────────────────────────────
+  const hamPos=EQUIP.hammer||{mx:Z.cargoAft+3, my:Z.B*0.12};
+  EQUIP.hammer=hamPos;
+  const hamR=px(eqHamL()*0.45);
+  o.push(`<g id="fndHamEl">
+    <circle cx="${X(hamPos.mx)}" cy="${Y(hamPos.my)}" r="${hamR}"
+      fill="#e0d8c8" stroke="#444" stroke-width="1.5"/>
+    <circle cx="${X(hamPos.mx)}" cy="${Y(hamPos.my)}" r="${hamR*0.6}"
+      fill="#ccc4b4" stroke="#555" stroke-width="0.9"/>
+    <text x="${X(hamPos.mx)}" y="${Y(hamPos.my)-hamR-4}" fill="#333" font-size="7"
+      text-anchor="middle" font-family="sans-serif" font-weight="700">HAMMER</text>
+  </g>`);
+
+  // ── Gripper (aft-port, hanging off hull) ──────────────────────────────
+  const defEquip=fndDefaultEquip(v,Z,dia);
+  const gripPos=EQUIP.gripper||defEquip.gripper;
+  EQUIP.gripper=gripPos;
+  const gR=px(eqGripDia()/2);
+  o.push(`<g id="fndGripEl">
+    <circle cx="${X(gripPos.mx)}" cy="${Y(gripPos.my)}" r="${gR}" fill="#f4c542" stroke="#8a6a10" stroke-width="2" opacity="0.92"/>
+    <circle cx="${X(gripPos.mx)}" cy="${Y(gripPos.my)}" r="${gR*0.62}" fill="none" stroke="#8a6a10" stroke-width="1.5"/>
+    <circle cx="${X(gripPos.mx)}" cy="${Y(gripPos.my)}" r="${gR*0.22}" fill="#fff" stroke="#8a6a10" stroke-width="1" opacity="0.7"/>
+    <text x="${X(gripPos.mx)}" y="${Y(gripPos.my)+gR+11}" fill="#5a3a00" font-size="7"
+      text-anchor="middle" font-family="sans-serif" font-weight="700">GRIPPER</text>
+  </g>`);
+
+  // ── Monopiles (transverse rectangles) ─────────────────────────────────
+  const yCenter=Z.B/2;
+  STACKS.forEach((st,si)=>{
+    // Top view shows ONE footprint per stack position — sized to the largest
+    // pile in that stack (since stacked piles occupy the same plan-view area).
+    const stDia = fndStackMaxDia(st), stLen = fndStackMaxLen(st);
+    const cx=X(st.mx);
+    const halfD=px(stDia/2);
+    const halfLen=px(stLen/2);
+    const yC=Y(yCenter);
+    const portEdge=Y(0), stbdEdge=Y(Z.B);
+    const pileTop=yC-halfLen, pileBot=yC+halfLen;
+
+    // Overhang beyond hull (dashed, translucent)
+    if(pileTop<portEdge){
+      o.push(`<rect x="${cx-halfD}" y="${pileTop}" width="${halfD*2}" height="${portEdge-pileTop}"
+        fill="#6a8a9a" opacity="0.25" stroke="#2a3a44" stroke-width="0.7" stroke-dasharray="4 3"/>`);
+    }
+    if(pileBot>stbdEdge){
+      o.push(`<rect x="${cx-halfD}" y="${stbdEdge}" width="${halfD*2}" height="${pileBot-stbdEdge}"
+        fill="#6a8a9a" opacity="0.25" stroke="#2a3a44" stroke-width="0.7" stroke-dasharray="4 3"/>`);
+    }
+    // Main body
+    const bodyTop=Math.max(pileTop, portEdge-1), bodyBot=Math.min(pileBot, stbdEdge+1);
+    o.push(`<rect x="${cx-halfD}" y="${bodyTop}" width="${halfD*2}" height="${bodyBot-bodyTop}"
+      fill="#7a8a96" stroke="#2a3a44" stroke-width="1.4" rx="3"/>`);
+
+    // Cylindrical end caps with yellow paint band (realistic pile ends)
+    const capH=halfD*0.28;
+    [portEdge, stbdEdge].forEach((eY,ei)=>{
+      const capY=ei===0?Math.max(pileTop, portEdge-capH):Math.min(pileBot, stbdEdge+capH);
+      o.push(`<ellipse cx="${cx}" cy="${capY}" rx="${halfD}" ry="${capH}" fill="#c8d4da" stroke="#333" stroke-width="1"/>`);
+      o.push(`<ellipse cx="${cx}" cy="${capY}" rx="${halfD*0.62}" ry="${capH*0.62}" fill="none" stroke="#4a5a64" stroke-width="0.7"/>`);
+      o.push(`<ellipse cx="${cx}" cy="${capY}" rx="${halfD}" ry="${capH}" fill="#f4c542" stroke="#8a6010" stroke-width="0.8" opacity="0.75"/>`);
+    });
+
+    // Weld seam line
+    o.push(`<line x1="${cx}" y1="${bodyTop}" x2="${cx}" y2="${bodyBot}"
+      stroke="#5a6a74" stroke-width="0.6" stroke-dasharray="8 6" opacity="0.5"/>`);
+
+    // Stack qty badge
+    if(st.piles.length>1){
+      o.push(`<rect x="${cx-14}" y="${yC-10}" width="28" height="18" rx="9" fill="#1a5c7a" opacity="0.88"/>`);
+      o.push(`<text x="${cx}" y="${yC+4}" fill="#fff" font-size="12" text-anchor="middle" font-family="sans-serif" font-weight="700">${st.piles.length}×</text>`);
+    } else {
+      o.push(`<text x="${cx}" y="${yC+4}" fill="#fff" font-size="9" text-anchor="middle" font-family="sans-serif">MP</text>`);
+    }
+
+    // Lifting feasibility indicator (green/red dot)
+    const liftColor=st._liftOK===false?'#e07a7a':st._liftOK===true?'#5cb88a':'#aaa';
+    o.push(`<circle cx="${cx+halfD+5}" cy="${yC}" r="4" fill="${liftColor}" opacity="0.85"/>`);
+
+    // Drag hitbox
+    o.push(`<g data-drag="stack" data-id="${st.id}" data-mx="${st.mx.toFixed(2)}" data-my="${st.my.toFixed(2)}">
+      <rect x="${cx-halfD-4}" y="${pileTop}" width="${halfD*2+8}" height="${pileBot-pileTop}" fill="transparent" style="cursor:grab"/>
+    </g>`);
+  });
+
+  // Clearance guides for floaters — uses each pile's own diameter
+  if(isFloat && STACKS.length>=2){
+    for(let i=0;i<STACKS.length-1;i++){
+      const d1=STACKS[i].dia||dia, d2=STACKS[i+1].dia||dia;
+      const x1=X(STACKS[i].mx+d1/2), x2=X(STACKS[i+1].mx-d2/2);
+      if(x2>x1+2){
+        const gap=(STACKS[i+1].mx-STACKS[i].mx-(d1+d2)/2).toFixed(1);
+        o.push(`<line x1="${x1}" y1="${Y(yCenter)}" x2="${x2}" y2="${Y(yCenter)}" stroke="#e07a00" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.65"/>`);
+        o.push(`<text x="${(x1+x2)/2}" y="${Y(yCenter)-7}" fill="#e07a00" font-size="8" text-anchor="middle" font-family="sans-serif">${gap}m</text>`);
+      }
+    }
+  }
+
+  // ── Boom-over-monopiles overlay (drawn AFTER piles, so it's genuinely
+  // translucent and the pile footprints remain visible underneath) ────────
+  // Spans from the crane to beyond the farthest stack, matching the side
+  // view's "boom rests above the pile stacks" treatment but in plan view.
+  if(STACKS.length){
+    const maxStackX = Math.max(...STACKS.map(st=>st.mx + fndStackMaxDia(st)/2));
+    const minStackX = Math.min(...STACKS.map(st=>st.mx - fndStackMaxDia(st)/2));
+    const boomStartX = Z.cl.mx;
+    const boomEndX = Math.max(maxStackX, minStackX) + 5;
+    const overlayX1 = X(Math.min(boomStartX, minStackX-3));
+    const overlayX2 = X(boomEndX);
+    // Width: for jack-ups the boom sweeps the full beam (piles span it too);
+    // for floaters, cover the y-extent actually used by the stacks.
+    const stackYs = STACKS.map(st=>st.my);
+    const overlayY1 = isFloat ? Y(Math.max(0, Math.min(...stackYs) - dia/2 - 2)) : Y(0);
+    const overlayY2 = isFloat ? Y(Math.min(Z.B, Math.max(...stackYs) + dia/2 + 2)) : Y(Z.B);
+    o.push(`<rect x="${Math.min(overlayX1,overlayX2)}" y="${Math.min(overlayY1,overlayY2)}"
+      width="${Math.abs(overlayX2-overlayX1)}" height="${Math.abs(overlayY2-overlayY1)}"
+      fill="#c02020" opacity="0.16" stroke="#c02020" stroke-width="1.2" stroke-dasharray="8 5"
+      pointer-events="none"/>`);
+    o.push(`<text x="${(overlayX1+overlayX2)/2}" y="${Math.min(overlayY1,overlayY2)-4}"
+      fill="#c02020" font-size="8" text-anchor="middle" font-family="sans-serif" opacity="0.75"
+      pointer-events="none">CRANE BOOM SWEEP (at rest)</text>`);
+  }
+
+  svg.innerHTML=o.join('');
+
+  // Attach drag handlers
+  svg.querySelectorAll('[data-drag="stack"]').forEach(el=>{
+    const id=+el.dataset.id, mx=+el.dataset.mx, my=+el.dataset.my;
+    el.style.cursor='grab';
+    el.addEventListener('mousedown',  e=>{e.stopPropagation();fndStartDrag(e,svg,'stack',id,mx,my);});
+    el.addEventListener('touchstart', e=>{e.preventDefault();e.stopPropagation();fndStartDrag(e,svg,'stack',id,mx,my);},{passive:false});
+  });
+  const gEl=svg.querySelector('#fndGripEl');  if(gEl) attachDrag(gEl,svg,'gripper',0,gripPos.mx,gripPos.my);
+  const hEl=svg.querySelector('#fndHamEl');   if(hEl) attachDrag(hEl,svg,'hammer',0,hamPos.mx,hamPos.my);
+  const cEl=svg.querySelector('#fndCraneEl'); if(cEl && isFloat) attachDrag(cEl,svg,'crane',0,Z.cl.mx,Z.cl.my);
+  svg.onmousemove=fndMoveDrag; svg.onmouseup=fndEndDrag; svg.onmouseleave=fndEndDrag;
+  svg.ontouchmove=e=>{e.preventDefault();fndMoveDrag(e);}; svg.ontouchend=fndEndDrag;
+
+  const tag=document.getElementById('fndTopTag');
+  if(tag) tag.textContent=`${isFloat?'side-by-side':'transverse between legs'} · ${STACKS.reduce((s,st)=>s+st.piles.length,0)} MPs`;
+}
+
+function drawSideView(v, Z){
+  // Reference images studied:
+  // Image 2 (Orion, floater): crane boom pointing forward-up, accommodation forward,
+  //   monopiles lying along hull with stern overhang, yellow end caps.
+  // Image 3 (Bold Tern, jack-up): BOOM AT REST — crane tower compact, boom angled AFT
+  //   at ~25-30° from horizontal, resting on a triangular A-frame boom cradle on deck.
+  //   Accommodation multi-deck forward. Legs are tall cylindrical spuds.
+  const svg=document.getElementById('fndSideSVG');
+  if(!svg) return;
+  const W=760, H=300;
+  const dia=mpDia(), len=mpLen();
+  const isFloat=Z.isFloat;
+
+  const totalL=Z.L+Z.L*0.035;  // same bow proportion as top view (shortened)
+  const scX=(W-80)/totalL;
+  const DECK_Y=175;
+  const hullH=Math.max(18,(v.hullDepth||10)*scX*0.7);
+  const KEEL_Y=DECK_Y+hullH;
+  const WATER_Y=KEEL_Y+22;
+  const X=m=>40+m*scX, pxS=m=>m*scX;
+
+  let o=[];
+  o.push(`<rect width="${W}" height="${H}" fill="#0c1a26"/>`);
+
+  // ── Sea ────────────────────────────────────────────────────────────────
+  o.push(`<rect x="0" y="${WATER_Y}" width="${W}" height="${H-WATER_Y}" fill="#0a2040" opacity="0.7"/>`);
+  for(let wx=0;wx<W;wx+=36){
+    o.push(`<path d="M${wx},${WATER_Y} Q${wx+9},${WATER_Y-3} ${wx+18},${WATER_Y} Q${wx+27},${WATER_Y+2} ${wx+36},${WATER_Y}"
+      fill="none" stroke="#1a5a8a" stroke-width="0.8" opacity="0.5"/>`);
+  }
+  o.push(`<text x="6" y="${WATER_Y-3}" fill="#3a8aba" font-size="8" font-family="sans-serif">WL</text>`);
+
+  // ── Hull profile ────────────────────────────────────────────────────────
+  o.push(`<rect x="${X(0)}" y="${DECK_Y}" width="${pxS(Z.L)}" height="${hullH}"
+    fill="#2a3a4a" stroke="#5a7a8a" stroke-width="1.5"/>`);
+  // Bow taper
+  const bowPx=pxS(Z.L*0.055);
+  o.push(`<polygon points="${X(Z.L)},${DECK_Y} ${X(Z.L)+bowPx},${DECK_Y+hullH/2} ${X(Z.L)},${DECK_Y+hullH}"
+    fill="#2a3a4a" stroke="#5a7a8a" stroke-width="1.5"/>`);
+  // Deck line
+  o.push(`<line x1="${X(0)}" y1="${DECK_Y}" x2="${X(Z.L)+bowPx*0.6}" y2="${DECK_Y}"
+    stroke="#7a9aaa" stroke-width="2"/>`);
+  // Boot-topping waterline stripe
+  o.push(`<rect x="${X(0)}" y="${DECK_Y+hullH*0.65}" width="${pxS(Z.L)+bowPx*0.5}" height="${hullH*0.20}"
+    fill="#8a2010" opacity="0.4"/>`);
+  o.push(`<text x="${X(0)-4}" y="${DECK_Y+10}" fill="#6a8a9a" font-size="8" text-anchor="end" font-family="sans-serif">AFT</text>`);
+  o.push(`<text x="${X(Z.L)+bowPx+4}" y="${DECK_Y+10}" fill="#6a8a9a" font-size="8" font-family="sans-serif">BOW</text>`);
+
+  // ── Accommodation block (forward) ───────────────────────────────────────
+  // Simple clean rectangle, aligned exactly with the top view's accommodation
+  // zone (same Z.cargoEnd → Z.L x-range) — matches the user's sketch: one
+  // plain block, not a detailed multi-deck structure.
+  const accomStartX = X(Z.cargoEnd - 2);   // shifted aft, closer to the fwd legs
+  const accomEndX   = X(Z.L - 12);          // shifted aft, leaving bow/helideck overhang clear
+  const accomW = accomEndX - accomStartX;
+  if(accomW > 12){
+    const accomH = Math.max(60, hullH*3.2);
+    o.push(`<rect x="${accomStartX}" y="${DECK_Y-accomH}" width="${accomW}" height="${accomH}"
+      fill="#3a4a5a" stroke="#6a8a9a" stroke-width="1.5" rx="2"/>`);
+    o.push(`<text x="${(accomStartX+accomEndX)/2}" y="${DECK_Y-accomH/2+3}"
+      fill="#aac4d4" font-size="8" text-anchor="middle" font-family="sans-serif"
+      font-weight="600" transform="rotate(-90 ${(accomStartX+accomEndX)/2} ${DECK_Y-accomH/2})">ACCOMMODATION</text>`);
+  }
+
+  // ── Jack-up legs (thin lattice truss, per Wind Ally reference photo) ──────
+  // Legs are slender X-braced lattice towers, not thick cylinders. Each leg has
+  // a small grey jacking-gear housing at deck level. Near the top: alternating
+  // black / red-white warning bands, as seen on the real Cadeler A-class legs.
+  //
+  // IMPORTANT: leg/crane height is sized from the actual pile-stack geometry,
+  // not from the vessel's real-world leg length (that number, ~100-150m, is
+  // the physical jacking leg including its submerged portion — scaling it by
+  // the horizontal pixel scale pushed the whole crane/boom off-canvas above
+  // the visible area, which is why the crane never appeared "on top of" the
+  // monopiles). The crane must always clear the tallest pile stack on deck.
+  let craneLegX = null;
+  const pileRForHeight = dia/2 * scX;  // fallback for empty-stack case
+  const tallestStackTopY = STACKS.length
+    ? Math.min(...STACKS.map(st => {
+        // Sum each pile's OWN diameter (piles in a stack can differ in size)
+        const qty = st.piles.length;
+        const totalPileHeight = st.piles.reduce((sum,p)=> sum + p.dia*scX, 0);
+        return DECK_Y - totalPileHeight - Math.max(0,qty-1)*2;
+      }))
+    : DECK_Y - 40;
+  const clearMargin = 26;
+  // Pedestal height (user-adjustable, metres) also drives leg height so the
+  // plain lattice leg always stands visibly taller than the pedestal around
+  // the crane leg, and the boom (pivoting from the pedestal top) still clears
+  // the tallest pile stack.
+  const pedHmInput = +document.getElementById('fnd_pedestalH')?.value || 30;
+  const pedHpx = Math.max(30, Math.min(160, pedHmInput * scX * 0.55));
+  const legHeight = Math.max(95, Math.min(220, Math.max((DECK_Y - tallestStackTopY) + clearMargin, pedHpx + 35)));
+  if(!isFloat && Z.nLegs>0){
+    const legXs=[...new Set(Z.legs.map(l=>Math.round(l.mx*10)/10))];
+    const cranePort=(fndCraneSideSelected()||v.cranePos||'aft-stbd').includes('port');
+    // Identify which leg carries the crane pedestal (the aft leg, on the chosen side)
+    const aftLegXVal = Math.min(...legXs);
+    craneLegX = aftLegXVal;
+
+    legXs.forEach((lx,li)=>{
+      const isCraneLeg = Math.abs(lx-craneLegX)<0.5;
+      const lW = pxS(Z.legR*0.62);   // slender lattice leg width
+
+      // Jacking-gear housing at deck level (grey box) — every leg has one
+      const jgW=lW*2.6, jgH=16;
+      o.push(`<rect x="${X(lx)-jgW/2}" y="${DECK_Y-jgH}" width="${jgW}" height="${jgH}"
+        fill="#b8b4a8" stroke="#555" stroke-width="1"/>`);
+      o.push(`<rect x="${X(lx)-jgW/2+2}" y="${DECK_Y-jgH+3}" width="${jgW-4}" height="${jgH*0.4}"
+        fill="#9a968a" stroke="#666" stroke-width="0.5"/>`);
+
+      if(!isCraneLeg){
+        // Plain lattice truss leg — thin, X-braced, banded near the top
+        const topY=DECK_Y-jgH-legHeight;
+        [X(lx)-lW/2, X(lx)+lW/2].forEach(cx=>{
+          o.push(`<line x1="${cx}" y1="${topY}" x2="${cx}" y2="${DECK_Y-jgH}" stroke="#2a2a2a" stroke-width="1.8"/>`);
+        });
+        const nBays=Math.ceil(legHeight/14);
+        for(let bi=0;bi<nBays;bi++){
+          const y1=DECK_Y-jgH-bi*(legHeight/nBays), y2=DECK_Y-jgH-(bi+1)*(legHeight/nBays);
+          const nearTop = bi > nBays-4; // top ~4 bays get warning bands
+          const col = nearTop ? (bi%2===0?'#c02020':'#eee') : '#2a2a2a';
+          if(bi%2===0){
+            o.push(`<line x1="${X(lx)-lW/2}" y1="${y1}" x2="${X(lx)+lW/2}" y2="${y2}" stroke="${col}" stroke-width="1.1"/>`);
+          } else {
+            o.push(`<line x1="${X(lx)+lW/2}" y1="${y1}" x2="${X(lx)-lW/2}" y2="${y2}" stroke="${col}" stroke-width="1.1"/>`);
+          }
+          if(nearTop){
+            o.push(`<rect x="${X(lx)-lW/2}" y="${y2}" width="${lW}" height="${y1-y2}" fill="${col}" opacity="0.18"/>`);
+          }
+        }
+        o.push(`<text x="${X(lx)}" y="${topY-5}" fill="#6a8a9a" font-size="7"
+          text-anchor="middle" font-family="sans-serif">LEG ${li+1}</text>`);
+      }
+    });
+  }
+
+  // ── Crane — truss leg visible inside a tapered pedestal, with a horizontal
+  // rest-position boom sized to clear a 2-high pile stack (per Wind Ally
+  // photo and explicit correction: boom is straight/horizontal at rest). ────
+  {
+    const cranePort=(fndCraneSideSelected()||v.cranePos||'aft-stbd').includes('port');
+    const crX = isFloat ? X(Z.cl.mx) : X(craneLegX ?? Z.cl.mx);
+    const jgH=16;
+
+    // Pedestal height — reuses the value computed above (pedHpx), so the
+    // input in the left panel directly controls where the slew ring (and
+    // therefore the whole boom) sits — moving one moves the other.
+    const pedH = pedHpx;
+
+    if(!isFloat){
+      const pedBaseY = DECK_Y - jgH;
+      const pedTopY2 = pedBaseY - pedH;
+
+      // ── Plain truss leg drawn first, passing straight through the pedestal
+      // and continuing above it — the pedestal SURROUNDS the leg, it doesn't
+      // replace it (matches the Wind Ally photo: the lattice leg is visible
+      // above the tapered crane housing). ────────────────────────────────
+      const legTopY = DECK_Y - jgH - legHeight;
+      const lW2 = pxS(Z.legR*0.62);
+      [crX-lW2/2, crX+lW2/2].forEach(cx=>{
+        o.push(`<line x1="${cx}" y1="${legTopY}" x2="${cx}" y2="${pedBaseY}" stroke="#2a2a2a" stroke-width="1.8"/>`);
+      });
+      const nBaysC=Math.ceil(legHeight/14);
+      for(let bi=0;bi<nBaysC;bi++){
+        const y1=pedBaseY-bi*(legHeight/nBaysC), y2=pedBaseY-(bi+1)*(legHeight/nBaysC);
+        const nearTop = bi > nBaysC-4;
+        const col = nearTop ? (bi%2===0?'#c02020':'#eee') : '#2a2a2a';
+        if(bi%2===0) o.push(`<line x1="${crX-lW2/2}" y1="${y1}" x2="${crX+lW2/2}" y2="${y2}" stroke="${col}" stroke-width="1"/>`);
+        else         o.push(`<line x1="${crX+lW2/2}" y1="${y1}" x2="${crX-lW2/2}" y2="${y2}" stroke="${col}" stroke-width="1"/>`);
+      }
+      o.push(`<text x="${crX}" y="${legTopY-5}" fill="#6a8a9a" font-size="7" text-anchor="middle" font-family="sans-serif">CRANE LEG</text>`);
+
+      // ── Tapered pedestal around the leg's lower/mid section ─────────────
+      const pedBaseW = pxS(Z.legR*2.6);
+      const pedTopW  = pxS(Z.legR*1.3);
+      o.push(`<polygon points="${crX-pedBaseW/2},${pedBaseY} ${crX+pedBaseW/2},${pedBaseY} ${crX+pedTopW/2},${pedTopY2} ${crX-pedTopW/2},${pedTopY2}"
+        fill="#c8c8c4" stroke="#555" stroke-width="1.3" opacity="0.94"/>`);
+      for(let si=-1; si<=1; si++){
+        const fx = si*pedBaseW*0.22;
+        o.push(`<line x1="${crX+fx}" y1="${pedBaseY}" x2="${crX+fx*(pedTopW/pedBaseW)}" y2="${pedTopY2}" stroke="#999" stroke-width="0.5" opacity="0.6"/>`);
+      }
+      // Slew ring on top of the pedestal (where the leg emerges and the boom pivots)
+      o.push(`<ellipse cx="${crX}" cy="${pedTopY2}" rx="${pedTopW*0.75}" ry="4" fill="#888" stroke="#444" stroke-width="1"/>`);
+
+      // ── Boom: ALWAYS horizontal / straight at rest, per confirmed practice.
+      // Length is set so the tip reaches over the accommodation block (as on
+      // the real vessel, the long boom rests spanning nearly the full ship,
+      // well past the pile stacks) — not just barely clearing the piles. ──
+      const craneHead = {x: crX, y: pedTopY2 - 5};
+      const boomTargetX = (accomStartX + accomEndX) / 2;   // land at the accommodation's centre
+      const boomLenPx = Math.max(160, Math.min(320, boomTargetX - craneHead.x, X(Z.L)-crX-10));
+      const boomTip   = {x: craneHead.x + boomLenPx, y: craneHead.y};
+
+      const baseHalfW=7, tipHalfW=3.5;
+      const p1={x:craneHead.x, y:craneHead.y-baseHalfW}, p2={x:craneHead.x, y:craneHead.y+baseHalfW};
+      const p3={x:boomTip.x,   y:boomTip.y+tipHalfW},   p4={x:boomTip.x,   y:boomTip.y-tipHalfW};
+      o.push(`<polygon points="${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}"
+        fill="#c02020" stroke="#7a1010" stroke-width="1.2"/>`);
+      o.push(`<polygon points="${p1.x},${p1.y} ${craneHead.x},${craneHead.y-baseHalfW*0.4} ${boomTip.x},${boomTip.y-tipHalfW*0.4} ${p4.x},${p4.y}"
+        fill="#e05050" opacity="0.55"/>`);
+      o.push(`<circle cx="${craneHead.x}" cy="${craneHead.y}" r="4" fill="#888" stroke="#444" stroke-width="1"/>`);
+
+      // Hook, hanging from the tip
+      o.push(`<line x1="${boomTip.x}" y1="${boomTip.y}" x2="${boomTip.x}" y2="${boomTip.y+18}" stroke="#888" stroke-width="1" opacity="0.7"/>`);
+      o.push(`<rect x="${boomTip.x-4}" y="${boomTip.y+18}" width="8" height="7" fill="#f4c542" stroke="#8a6010" stroke-width="0.8"/>`);
+
+      o.push(`<text x="${crX}" y="${pedTopY2-10}" fill="#8aaabb" font-size="7"
+        text-anchor="middle" font-family="sans-serif">CRANE (rest — horizontal)</text>`);
+
+    } else {
+      // ── FLOATER: pedestal crane, boom also horizontal at rest ──────────
+      const crTH=Math.max(40, pedH*0.9), crTW=16;
+      o.push(`<rect x="${crX-crTW/2}" y="${DECK_Y-crTH}" width="${crTW}" height="${crTH}"
+        fill="none" stroke="#8a9aaa" stroke-width="1.3"/>`);
+      for(let di=0;di<3;di++){
+        const dy=di*(crTH/3);
+        o.push(`<line x1="${crX-crTW/2}" y1="${DECK_Y-dy}" x2="${crX+crTW/2}" y2="${DECK_Y-dy-crTH/3}" stroke="#8a9aaa" stroke-width="0.6" opacity="0.5"/>`);
+        o.push(`<line x1="${crX+crTW/2}" y1="${DECK_Y-dy}" x2="${crX-crTW/2}" y2="${DECK_Y-dy-crTH/3}" stroke="#8a9aaa" stroke-width="0.6" opacity="0.5"/>`);
+      }
+      const crHead={x:crX, y:DECK_Y-crTH};
+      const boomLenPx=Math.max(160, Math.min(320, (accomStartX+accomEndX)/2-crX, X(Z.L)-crX-10));
+      const boomEnd={x:crHead.x+boomLenPx, y:crHead.y};
+      const bw=6;
+      o.push(`<polygon points="${crHead.x},${crHead.y-bw} ${crHead.x},${crHead.y+bw} ${boomEnd.x},${boomEnd.y+bw*0.5} ${boomEnd.x},${boomEnd.y-bw*0.5}"
+        fill="#8aaabb" stroke="#4a6a8a" stroke-width="1"/>`);
+      o.push(`<circle cx="${boomEnd.x}" cy="${boomEnd.y}" r="4" fill="#6a8aaa" stroke="#4a6a8a" stroke-width="1"/>`);
+      o.push(`<text x="${crX}" y="${DECK_Y-crTH-5}" fill="#8aaabb" font-size="7"
+        text-anchor="middle" font-family="sans-serif">CRANE (rest — horizontal)</text>`);
+    }
+  }
+
+  // ── Monopiles — end-on circles (side view) ──────────────────────────────
+  // Each pile in a stack keeps its OWN diameter — circles can differ in size
+  // within the same stack, drawn bottom-to-top in stacking order.
+  STACKS.forEach((st,si)=>{
+    const maxR = fndStackMaxDia(st)/2 * scX;
+    let cumY = 0;  // running height already stacked, in px
+    const cx=X(st.mx);
+    st.piles.forEach((p,qi)=>{
+      const pR = p.dia/2 * scX;
+      const cy = DECK_Y - cumY - pR;
+      cumY += pR*2 + 2;
+      const hue=200+si*28+qi*6;
+      o.push(`<circle cx="${cx}" cy="${cy}" r="${pR}" fill="hsl(${hue},20%,48%)" stroke="#2a3a44" stroke-width="1.4"/>`);
+      o.push(`<circle cx="${cx}" cy="${cy}" r="${pR*0.7}" fill="none" stroke="#4a5a64" stroke-width="0.8" opacity="0.5"/>`);
+      o.push(`<circle cx="${cx}" cy="${cy}" r="${pR}" fill="none"
+        stroke="#f4c542" stroke-width="${Math.max(1.5, pR*0.13)}" opacity="0.75"/>`);
+      // Lift feasibility dot — per pile
+      const dotCol=p._liftOK===false?'#e07a7a':p._liftOK===true?'#5cb88a':'#888';
+      o.push(`<circle cx="${cx+pR+5}" cy="${cy}" r="4" fill="${dotCol}" opacity="0.9"/>`);
+    });
+    // Stack qty label above the topmost pile
+    if(st.piles.length>1){
+      const topY = DECK_Y - cumY - 14;
+      o.push(`<rect x="${cx-12}" y="${topY}" width="24" height="13" rx="6" fill="#1a5c7a" opacity="0.9"/>`);
+      o.push(`<text x="${cx}" y="${topY+9}" fill="#fff" font-size="9" text-anchor="middle" font-family="sans-serif" font-weight="700">${st.piles.length}×MP</text>`);
+    }
+    // Diameter annotation (largest pile in this stack)
+    o.push(`<line x1="${cx-maxR}" y1="${DECK_Y+7}" x2="${cx+maxR}" y2="${DECK_Y+7}" stroke="#5a7a90" stroke-width="0.8"/>`);
+    o.push(`<text x="${cx}" y="${DECK_Y+18}" fill="#5a7a90" font-size="8" text-anchor="middle" font-family="sans-serif">${st.piles.map(p=>'Ø'+p.dia+'m').join('/')}</text>`);
+  });
+
+  // ── Legend for lift indicator ───────────────────────────────────────────
+  o.push(`<circle cx="${W-80}" cy="14" r="4" fill="#5cb88a"/>`);
+  o.push(`<text x="${W-74}" y="18" fill="#5cb88a" font-size="8" font-family="sans-serif">Can lift</text>`);
+  o.push(`<circle cx="${W-80}" cy="26" r="4" fill="#e07a7a"/>`);
+  o.push(`<text x="${W-74}" y="30" fill="#e07a7a" font-size="8" font-family="sans-serif">Overweight</text>`);
+
+  // Title
+  const total=STACKS.reduce((s,st)=>s+st.piles.length,0);
+  o.push(`<text x="${W/2}" y="14" fill="#8aaabb" font-size="10" text-anchor="middle" font-family="sans-serif"
+    >${v.name} · ${isFloat?'Floating':'Jack-up'} · side view · ${total} MPs</text>`);
+
+  svg.innerHTML=o.join('');
+
+  const tag=document.getElementById('fndSideTag');
+  if(tag) tag.textContent=`${STACKS.map(s=>`${s.piles.length}×MP`).join('+')} · ${isFloat?'floating':'jack-up'} · boom at ${isFloat?'transit angle':'rest on cradle'}`;
+}
+
+function fndComputeCapacity(v, Z){
+  const dia=mpDia(), len=mpLen(), wt=mpWt(), clr=mpClr();
+  const totalMP=STACKS.reduce((s,st)=>s+st.piles.length,0);
+  const spreadW=fndSpreadW();     // spreader bar weight (default 150t)
+
+  // Some vessels (e.g. Pioneering Spirit) are heavy-lift vessels not equipped
+  // or used for monopile foundation installation — no gripper/upending spread.
+  if(v.foundationCapable === false){
+    return {totalMP, usablePayload:0, totalPileWt:0, byWeight:0, liftableMPs:0,
+            bestSWL:0, spreadW, liftUpend:0, buoyancy:0, hookSea:'—', hookForUpend:0,
+            craneOK:false, hookOK:false, method:'Not equipped for monopile installation',
+            warnings:['This vessel is not used for monopile foundation installation.'],
+            practical:0, binding:'Vessel not foundation-capable', qtyR:qtyReq(), trips:Infinity,
+            notCapable:true};
+  }
+
+  // ── Usable vessel payload ───────────────────────────────────────────────
+  // If vessel.payload is from operator spec (cargo-only): use directly.
+  // If it looks like full DWT, deduct ~1500t for fuel/provisions/water.
+  const usablePayload=fndUsablePayload(v);
+
+  // ── Per-pile crane radius and SWL ────────────────────────────────────────
+  // Crane at Z.cl (single source of truth — side selector + drag override
+  // already resolved). Every pile is checked individually against the SWL
+  // at its stack's radius, using ITS OWN weight (piles in the same stack can
+  // differ, e.g. a heavier transition-piece-fitted pile vs a plain can).
+  const cX=Z.cl.mx, cY=Z.cl.my;
+
+  STACKS.forEach(st=>{
+    const dx=st.mx-cX, dy=Z.B/2-cY;
+    const radius=Math.hypot(dx, dy);
+    const swl=swlAtRadius(radius);
+    st._radius=radius;
+    st._swl=swl;
+    st.piles.forEach(p=>{
+      const liftWt=p.wt+spreadW;
+      p._liftWt=liftWt;
+      p._liftOK=(swl>=liftWt);
+    });
+    st._liftOK = st.piles.every(p=>p._liftOK);  // stack-level summary, for badges
+  });
+
+  // ── Capacity limits ────────────────────────────────────────────────────
+  // 1) Payload limit: sum of every individual pile's own weight ≤ usable payload
+  const allPiles = STACKS.flatMap(st=>st.piles);
+  const totalPileWt = allPiles.reduce((s,p)=>s+p.wt, 0);
+  const avgWt = totalMP>0 ? totalPileWt/totalMP : wt;
+  const byWeight=Math.max(0, Math.floor(usablePayload/(avgWt||wt)));
+
+  // 2) Crane limit: every individual pile must clear the SWL at its stack's radius
+  const craneFailPiles = allPiles.filter(p=>!p._liftOK);
+  const craneOK = craneFailPiles.length===0;
+
+  // 3) Hook height for upending — uses the longest pile in the whole
+  // arrangement (worst case for hook reach) and its own diameter for buoyancy.
+  const longestPile = allPiles.reduce((f,p)=> (p.len>(f?f.len:-1)) ? p : f, null) || {len, dia, wt};
+  const wd=fndWD();
+  const subFrac=Math.min(0.45,wd/longestPile.len);
+  const buoy=Math.PI*(longestPile.dia/2)**2*longestPile.len*subFrac*0.32*1.025;
+  const liftUpend=Math.max(longestPile.wt*0.4, longestPile.wt-buoy*0.6)+spreadW;
+  const hookSea=(v.hookAboveDeck||0)+(v.hullDepth||0);
+  const hookForUpend=Math.max(20, (longestPile.len-wd)*0.55+8);
+  const hookOK=hookSea>=hookForUpend;
+
+  let method;
+  const bestSWL=Math.max(...CRANE_POINTS.map(p=>p.swl),0);
+  if(hookSea>=(longestPile.len+8) && bestSWL>=longestPile.wt+spreadW) method='Direct lift';
+  else if(hookSea>=hookForUpend && bestSWL>=liftUpend)     method='Upending';
+  else if(bestSWL>=liftUpend)                              method='Barge-assisted upending';
+  else                                                     method='Floating/ballasting method';
+
+  // Warnings
+  const warnings=[];
+  if(!craneOK){
+    STACKS.forEach((st,si)=>{
+      st.piles.forEach((p,pi)=>{
+        if(!p._liftOK) warnings.push(`Stack ${si+1} / MP${pi+1}: lift ${p._liftWt}t > SWL ${Math.round(st._swl)}t at ${st._radius.toFixed(0)}m radius`);
+      });
+    });
+  }
+  if(totalPileWt>usablePayload){
+    warnings.push(`Total cargo ${totalPileWt}t > usable payload ${usablePayload}t`);
+  }
+  STACKS.forEach((st,i)=>{
+    const stDia=fndStackMaxDia(st);
+    const dx2=st.mx-cX, dy2=Z.B/2-cY;
+    if(Math.hypot(dx2,dy2)<Z.cRzone+stDia/2) warnings.push(`Stack ${i+1} within crane exclusion zone`);
+    Z.legs.forEach(lg=>{ if(Math.hypot(st.mx-lg.mx,Z.B/2-lg.my)<lg.r+stDia/2) warnings.push(`Stack ${i+1} overlaps leg`); });
+  });
+  if(Z.isFloat){
+    STACKS.forEach((st,i)=>{ STACKS.forEach((st2,j)=>{ if(i>=j)return;
+      const d1=fndStackMaxDia(st), d2=fndStackMaxDia(st2);
+      const d=Math.abs(st.mx-st2.mx);
+      const req=(d1+d2)/2;
+      if(d<req+clr) warnings.push(`Stacks ${i+1}+${j+1}: ${(d-req).toFixed(1)}m gap < ${clr}m required`);
+    });});
+  }
+
+  // Practical capacity = min of all limits, only counting individually-liftable piles
+  const liftableMPs = allPiles.filter(p=>p._liftOK).length;
+  const practical = Math.min(liftableMPs, byWeight);
+  const binding = practical===liftableMPs?'Arrangement':'Weight/payload';
+  const qtyR=qtyReq();
+  const trips=practical>0?Math.ceil(qtyR/practical):Infinity;
+
+  return {totalMP, usablePayload, totalPileWt, byWeight, liftableMPs,
+          bestSWL, spreadW, liftUpend:Math.round(liftUpend), buoyancy:Math.round(buoy),
+          hookSea:hookSea.toFixed(0), hookForUpend:Math.round(hookForUpend),
+          craneOK, hookOK, method, warnings, practical, binding, qtyR, trips};
+}
+
+
+
+// ── Results rendering ──────────────────────────────────────────────────────
+function fndRenderResults(v, Z, C){
+  // Strip
+  const totalEl=document.getElementById('fndTotalMP');
+  if(totalEl)totalEl.textContent=C.totalMP;
+  const arrEl=document.getElementById('fndArrangeChip');
+  if(arrEl)arrEl.textContent=Z.isFloat?`${STACKS.length}× side-by-side`:STACKS.map(s=>`${s.piles.length}MP`).join('+');
+  const mEl=document.getElementById('fndMethodChip');
+  if(mEl)mEl.textContent=C.method;
+  const ob=document.getElementById('fndOwnerBadge');
+  if(ob)ob.textContent=v.owner||'';
+
+  // Clearance note
+  const cn=document.getElementById('fndClrNote');
+  if(cn)cn.textContent=Z.isFloat?`c/c spacing = ${(mpDia()+mpClr()).toFixed(1)}m (Ø${mpDia()}m + ${mpClr()}m)`:
+    'Jack-up: stacking — no lateral clearance enforcement';
+
+  // Capacity body
+  const cb=document.getElementById('fndCapBody');
+  if(cb){
+    const okRed=v=>`<span class="${v?'gate-pass':'gate-fail'}">${v?'✓':'✗'}</span>`;
+    let stackRows=C.totalMP>0?STACKS.map((st,si)=>
+      st.piles.map((p,pi)=>{
+        const col=p._liftOK?'#5cb88a':'#e07a7a';
+        return `<div class="gate-row"><span class="gate-label" style="font-size:10px">Pos ${si+1}/MP${pi+1}: Ø${p.dia}m ${p.wt}t · R=${st._radius?.toFixed(0)||'?'}m</span>
+          <span class="gate-val" style="color:${col}">${p._liftWt||'?'}t vs SWL ${Math.round(st._swl||0)}t ${p._liftOK?'✓':'✗'}</span></div>`;
+      }).join('')
+    ).join(''):'';
+    cb.innerHTML=`
+      <div class="gate-row"><span class="gate-label">Total MPs arranged</span><span class="gate-val">${C.totalMP}</span></div>
+      <div class="gate-row"><span class="gate-label">Usable vessel payload</span><span class="gate-val">${C.usablePayload}t</span></div>
+      <div class="gate-row"><span class="gate-label">Total pile weight</span><span class="gate-val" style="color:${C.totalPileWt>C.usablePayload?'#e07a7a':'inherit'}">${C.totalPileWt}t</span></div>
+      <div class="gate-row"><span class="gate-label">Payload limit</span><span class="gate-val">${C.byWeight} MPs</span></div>
+      <div class="gate-row"><span class="gate-label">Spreader bar</span><span class="gate-val">${C.spreadW}t included in each lift</span></div>
+      ${stackRows}
+      <div class="gate-row"><span class="gate-label">Hook above sea</span><span class="gate-val">${C.hookSea}m</span></div>
+      <div class="gate-row"><span class="gate-label">Hook req. (upending)</span><span class="gate-val">${C.hookForUpend}m ${okRed(+C.hookSea>=C.hookForUpend)}</span></div>
+      ${C.warnings.length?`<div style="margin-top:5px;padding:5px;background:#3a1a0a;border-radius:4px;font-size:10px;color:#e0bc6a">${C.warnings.map(w=>'⚠ '+w).join('<br>')}</div>`:''}
+      <div class="gate-row" style="font-weight:700;border-top:2px solid #345;margin-top:4px;padding-top:4px">
+        <span class="gate-label">Practical capacity</span>
+        <span class="${C.practical>0?'gate-pass':'gate-fail'}">${C.practical} MPs / trip</span>
+      </div>`;
+  }
+
+  // Method body
+  const mb=document.getElementById('fndMethBody');
+  if(mb)mb.innerHTML=`<div style="padding:8px;background:${C.craneOK&&C.hookOK?'#0d3320':'#332910'};border-radius:5px;color:${C.craneOK&&C.hookOK?'#7ddba4':'#e0bc6a'};font-weight:700">${C.method}</div>`;
+
+  // Campaign
+  const ct=document.getElementById('fndCampTbl');
+  if(ct){
+    const lastTripQty = (C.practical>0 && C.trips!==Infinity)
+      ? C.qtyR - C.practical*(C.trips-1)
+      : 0;
+    ct.innerHTML = `
+      <tr><td>MPs required (project)</td><td class="n">${C.qtyR}</td></tr>
+      <tr><td>Practical capacity / trip</td><td class="n">${C.practical}</td></tr>
+      <tr style="font-weight:700;border-top:2px solid #345"><td>Trips required</td><td class="n">${C.trips===Infinity?'— (0 capacity)':C.trips}</td></tr>
+      ${C.trips!==Infinity && C.trips>0 ? `<tr><td style="font-size:11px;color:#8aa">Full trips at ${C.practical}/trip</td><td class="n" style="font-size:11px">${C.trips-1}</td></tr>
+      <tr><td style="font-size:11px;color:#8aa">Final trip quantity</td><td class="n" style="font-size:11px">${lastTripQty}</td></tr>` : ''}
+    `;
+  }
+}
+
+// ── Fleet comparison (quiet — no DOM side effects) ─────────────────────────
+function fndFleetComputeQuiet(v2){
+  if(v2.foundationCapable === false){
+    return {practical:0, craneOK:false, method:'Not monopile-capable', notCapable:true};
+  }
+  // Reuse the EXACT same arrangement + capacity logic as the main panel
+  // (previously this used a separate approximate formula, which is why
+  // Boreas showed 7 here but 5 in the main view — a real inconsistency bug).
+  const savedCurV = fndCurV;
+  const savedStacks = STACKS;
+  const savedEquip = EQUIP;
+  const savedOverride = CRANE_OVERRIDE;
+  try{
+    fndCurV = VESSELS.indexOf(v2);
+    EQUIP = {gripper:null, hammer:null};
+    CRANE_OVERRIDE = null;
+    fndDefaultStacks(v2, mpDia());
+    const Z2 = fndZones(v2);
+    const C2 = fndComputeCapacity(v2, Z2);
+    return {practical: C2.practical, craneOK: C2.craneOK, method: C2.method};
+  } finally {
+    fndCurV = savedCurV;
+    STACKS = savedStacks;
+    EQUIP = savedEquip;
+    CRANE_OVERRIDE = savedOverride;
+  }
+}
+
+function fndRenderFleet(){
+  const tbl=document.getElementById('fndFleetTbl');
+  if(!tbl)return;
+  const rows=VESSELS.map(v=>{ const r=fndFleetComputeQuiet(v); return {v,r}; })
+    .sort((a,b)=>b.r.practical-a.r.practical);
+  tbl.innerHTML=`<tr><th>Vessel</th><th class="n">MPs/trip</th><th>Method</th></tr>`+
+    rows.map(({v,r})=>`<tr style="cursor:pointer${v===VESSELS[fndCurV]?';font-weight:700':''}" onclick="fndSetVessel(${VESSELS.indexOf(v)})">
+      <td>${v.name}</td><td class="n">${r.notCapable?'N/A':(r.practical||'0')}</td><td style="font-size:11px">${r.method}</td></tr>`).join('');
+}
+
+function fndSetVessel(idx){
+  fndCurV=idx; document.getElementById('fndVesselSel').value=idx;
+  EQUIP={gripper:null,hammer:null};
+  fndDefaultStacks(VESSELS[idx],mpDia());
+  fndRenderStackRows(); fndRender();
+}
+
+// ── Master render ──────────────────────────────────────────────────────────
+function fndRender(){
+  const tabEl=document.getElementById('tab-foundation');
+  if(!tabEl||tabEl.classList.contains('hidden'))return;
+  const v=VESSELS[fndCurV]; if(!v)return;
+  const Z=fndZones(v);
+  drawTopView(v,Z);
+  drawSideView(v,Z);
+  fndRenderStackRows();
+  const C=fndComputeCapacity(v,Z);
+  fndRenderResults(v,Z,C);
+  fndRenderFleet();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function bindFoundation(){
+  fndFillVesselSel();
+  const v=VESSELS[fndCurV];
+  if(v){
+    const sideEl=document.getElementById('fnd_craneSide');
+    if(sideEl) sideEl.value = v.cranePos || 'aft-stbd';
+    fndInitCranePoints(v); fndDefaultStacks(v, mpDia()); fndRenderStackRows();
+  }
+
+  const inputIds=['mp_dia','mp_len','mp_wt','mp_clr','fnd_spreadW','eq_gripDia','eq_hamL','eq_hamW','mp_qty','fnd_wd','fnd_pedestalH'];
+  inputIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.oninput=()=>{ fndDefaultStacks(VESSELS[fndCurV], mpDia()); fndRenderStackRows(); fndRender(); };
+  });
+
+  const sideEl2=document.getElementById('fnd_craneSide');
+  if(sideEl2) sideEl2.onchange=()=>{ CRANE_OVERRIDE=null; fndRender(); };
+
+}
+
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",bindFoundation);}else{bindFoundation();}
+
 </script>
+
 </body>
 </html>
