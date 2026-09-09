@@ -2731,8 +2731,15 @@ function fndInitCranePoints(v){
 function swlAtRadius(r){
   if(!CRANE_POINTS.length) return 0;
   const pts = CRANE_POINTS.slice().sort((a,b)=>a.r-b.r);
-  if(r <= pts[0].r)   return pts[0].swl;
-  if(r >= pts[pts.length-1].r) return pts[pts.length-1].swl;
+  // Inside the minimum defined radius: hold the rated capacity.
+  if(r <= pts[0].r) return pts[0].swl;
+  // BEYOND the largest defined radius the boom simply cannot reach — return 0,
+  // not the last SWL. Previously this clamped flat, so a pile placed 266 m from
+  // the crane still reported 1500 t of capacity, which silently hid genuine
+  // out-of-reach arrangements. Real vessels hit this constantly: TWD note that
+  // where "the crane couldn't reach the farthest monopiles", skidding
+  // seafastening is fitted to bring them back into reach.
+  if(r > pts[pts.length-1].r) return 0;
   for(let i=0;i<pts.length-1;i++){
     if(r>=pts[i].r && r<=pts[i+1].r){
       const t=(r-pts[i].r)/(pts[i+1].r-pts[i].r);
@@ -2740,6 +2747,12 @@ function swlAtRadius(r){
     }
   }
   return 0;
+}
+
+// Largest radius the crane curve actually defines — used to distinguish
+// "too heavy at this radius" from "physically out of reach".
+function craneMaxRadius(){
+  return CRANE_POINTS.length ? Math.max(...CRANE_POINTS.map(p=>p.r)) : 0;
 }
 
 function fndRenderCranePoints(){
@@ -3249,6 +3262,21 @@ function drawTopView(v, Z){
         stroke="${CPCOLORS[ci%CPCOLORS.length]}" stroke-width="1" stroke-dasharray="5 4" opacity="0.45"/>`);
     });
 
+    // Maximum reach envelope — the hard outer limit of the crane curve.
+    // Anything outside this ring simply cannot be picked at all, regardless of
+    // weight, and needs skidding/SPMT to be brought inboard first. Drawn as a
+    // heavier ring with a label so the reason a pile fails is visible, not just
+    // reported in text.
+    {
+      const maxR = craneMaxRadius();
+      if(maxR > 0){
+        o.push(`<circle cx="${crX}" cy="${crY}" r="${px(maxR)}" fill="none"
+          stroke="#c02020" stroke-width="1.6" stroke-dasharray="10 5" opacity="0.6"/>`);
+        o.push(`<text x="${crX}" y="${crY - px(maxR) - 5}" fill="#c02020" font-size="8"
+          text-anchor="middle" font-family="sans-serif" opacity="0.85">MAX REACH ${maxR}m</text>`);
+      }
+    }
+
     // NOTE: the boom-over-monopiles overlay is drawn LATER, after the piles
     // themselves, so it can be genuinely translucent and still show the pile
     // footprints underneath (SVG layers in document order — drawing it here,
@@ -3324,10 +3352,13 @@ function drawTopView(v, Z){
       o.push(`<rect x="${cx-halfD}" y="${stbdEdge}" width="${halfD*2}" height="${pileBot-stbdEdge}"
         fill="#6a8a9a" opacity="0.25" stroke="#2a3a44" stroke-width="0.7" stroke-dasharray="4 3"/>`);
     }
-    // Main body
+    // Main body — tinted red if this position is outside the crane's max reach,
+    // so an unreachable stack is obvious on the drawing rather than only in text.
     const bodyTop=Math.max(pileTop, portEdge-1), bodyBot=Math.min(pileBot, stbdEdge+1);
+    const bodyFill = st._outOfReach ? '#a86a6a' : '#7a8a96';
+    const bodyStroke = st._outOfReach ? '#c02020' : '#2a3a44';
     o.push(`<rect x="${cx-halfD}" y="${bodyTop}" width="${halfD*2}" height="${bodyBot-bodyTop}"
-      fill="#7a8a96" stroke="#2a3a44" stroke-width="1.4" rx="3"/>`);
+      fill="${bodyFill}" stroke="${bodyStroke}" stroke-width="1.4" rx="3"/>`);
 
     // Cylindrical end caps with yellow paint band (realistic pile ends)
     const capH=halfD*0.28;
@@ -3731,9 +3762,14 @@ function fndComputeCapacity(v, Z){
     const swl=swlAtRadius(radius);
     st._radius=radius;
     st._swl=swl;
+    // Out of reach and too-heavy are different failures with different fixes:
+    // out of reach is solved by skidding/SPMT to bring the pile inboard,
+    // too heavy needs a bigger crane or a lighter pile. Flag them separately.
+    st._outOfReach = radius > craneMaxRadius();
     st.piles.forEach(p=>{
       const liftWt=p.wt+spreadW;
       p._liftWt=liftWt;
+      p._outOfReach=st._outOfReach;
       p._liftOK=(swl>=liftWt);
     });
     st._liftOK = st.piles.every(p=>p._liftOK);  // stack-level summary, for badges
@@ -3773,7 +3809,13 @@ function fndComputeCapacity(v, Z){
   if(!craneOK){
     STACKS.forEach((st,si)=>{
       st.piles.forEach((p,pi)=>{
-        if(!p._liftOK) warnings.push(`Stack ${si+1} / MP${pi+1}: lift ${p._liftWt}t > SWL ${Math.round(st._swl)}t at ${st._radius.toFixed(0)}m radius`);
+        if(!p._liftOK){
+          if(p._outOfReach){
+            warnings.push(`Pos ${si+1} / MP${pi+1}: OUT OF REACH — ${st._radius.toFixed(0)}m radius exceeds the crane curve's ${craneMaxRadius()}m max. Skidding/SPMT would be needed to bring it inboard.`);
+          } else {
+            warnings.push(`Pos ${si+1} / MP${pi+1}: too heavy — ${p._liftWt}t vs ${Math.round(st._swl)}t SWL at ${st._radius.toFixed(0)}m radius`);
+          }
+        }
       });
     });
   }
@@ -3834,8 +3876,11 @@ function fndRenderResults(v, Z, C){
     let stackRows=C.totalMP>0?STACKS.map((st,si)=>
       st.piles.map((p,pi)=>{
         const col=p._liftOK?'#5cb88a':'#e07a7a';
+        const verdict = p._outOfReach
+          ? 'out of reach ✗'
+          : `${p._liftWt||'?'}t vs SWL ${Math.round(st._swl||0)}t ${p._liftOK?'✓':'✗'}`;
         return `<div class="gate-row"><span class="gate-label" style="font-size:10px">Pos ${si+1}/MP${pi+1}: Ø${p.dia}m ${p.wt}t · R=${st._radius?.toFixed(0)||'?'}m</span>
-          <span class="gate-val" style="color:${col}">${p._liftWt||'?'}t vs SWL ${Math.round(st._swl||0)}t ${p._liftOK?'✓':'✗'}</span></div>`;
+          <span class="gate-val" style="color:${col}">${verdict}</span></div>`;
       }).join('')
     ).join(''):'';
     cb.innerHTML=`
