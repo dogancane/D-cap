@@ -246,7 +246,41 @@ footer{padding:20px;text-align:center;font-size:11px;color:var(--steel);font-fam
 .calc-center{overflow-y:auto;max-height:calc(100vh - 110px);padding:14px;display:flex;flex-direction:column;gap:14px}
 .calc-right{overflow-y:auto;max-height:calc(100vh - 110px);border-left:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:14px}
 @media(max-width:1100px){.calc-3col{grid-template-columns:300px 1fr 260px}}
-@media(max-width:850px){.calc-3col{grid-template-columns:1fr}.calc-left,.calc-right{max-height:none;border:none}}
+@media(max-width:850px){
+  .calc-3col{grid-template-columns:1fr}
+  .calc-left,.calc-right,.calc-center{max-height:none;border:none}
+}
+
+/* ── Phone layout ──────────────────────────────────────────────────────
+   Everything above already worked down to ~850px (3 columns -> 1 column,
+   nav tabs scroll horizontally, header/sel-strip wrap). What was missing
+   for phone-width screens specifically:
+   - .calc-center kept its own internal scrollbar (nested scroll inside the
+     page scroll is awkward with touch) — fixed above by including it in
+     the same max-height:none reset as the side columns.
+   - Wide tables (turbine data, fleet screening) would overflow the
+     viewport and stretch the whole page sideways instead of scrolling
+     just the table.
+   - Inputs/selects/buttons were sized for a mouse pointer (~24-30px tall),
+     below the ~44px touch target Apple/Google guidelines recommend — fine
+     for cursor precision, fiddly for a fingertip. Only enlarged inside
+     this query, so the dense desktop layout is untouched.                */
+@media(max-width:600px){
+  main{padding:10px 8px 40px}
+  header{padding:10px 12px;gap:10px}
+  header h1{font-size:13px}
+  .sel-strip{padding:8px 10px 0;gap:8px}
+  .sel-strip .result-chip{padding:5px 10px}
+
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  .field input[type=number],.field input[type=text],.field select{
+    width:auto;min-width:84px;padding:9px 8px;font-size:14px;
+  }
+  .field select{width:auto;min-width:110px}
+  header button{padding:11px 14px;font-size:12.5px}
+  nav.tabs button{padding:13px 14px}
+}
 
 /* ── Crane curve legend ─────────────────────────────── */
 .crane-legend{display:flex;gap:14px;padding:6px 12px;font-size:11px;color:#666;flex-wrap:wrap}
@@ -303,11 +337,11 @@ optgroup{font-weight:700;font-style:normal}
 </header>
 
 <nav class="tabs" role="tablist">
-  <button role="tab" aria-selected="true" data-tab="calc">Calculator</button>
+  <button role="tab" aria-selected="true" data-tab="calc">WTG</button>
+  <button role="tab" aria-selected="false" data-tab="foundation">FOU</button>
   <button role="tab" aria-selected="false" data-tab="fleet">Fleet screening</button>
   <button role="tab" aria-selected="false" data-tab="data">Vessel &amp; turbine data</button>
   <button role="tab" aria-selected="false" data-tab="method">Method &amp; assumptions</button>
-  <button role="tab" aria-selected="false" data-tab="foundation" style="background:rgba(30,110,80,0.15);color:#5cb88a">⚓ Foundation</button>
 </nav>
 
 <main>
@@ -718,41 +752,41 @@ optgroup{font-weight:700;font-style:normal}
 const DEFAULT_VESSELS = [
 // ===== CADELER FLEET =====
 { id:"windace", owner:"Cadeler", name:"Wind Ace", cls:"Cadeler A-class",
-  deckArea:5600, deckL:162, deckB:60, payload:15000, deckStrength:20,
+  deckArea:5600, deckL:162, deckB:60, payload:15500, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:12.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:205, boomLength:140, boomStowWidth:18, boomStowAngle:17,
+  hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3000, r1:39, cap2:1500, r2:75,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"15,000t payload, 5,600m² deck, 3,000t crane, 205m hook above deck, 120m legs. User-confirmed data." },
+  cap1:3300, r1:39, cap2:1500, r2:75,
+  conf:{deckArea:"v",payload:"e",cap1:"e",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
+  source:"Cadeler official A-Class Technical Specification (Sept 2025 PDF): hook above deck 180m (200m extended boom), DP2, 4x4MW azimuth thrusters. Payload >17,600t headline (Cadeler press); deck 5,600m² confirmed. Crane 3,300t@39m matches sister ship Wind Ally as-delivered (Sept 2025); Cadeler had not separately disclosed Ace's own crane figure at time of writing, so this is a same-class estimate, not vessel-specific confirmation." },
 { id:"windally", owner:"Cadeler", name:"Wind Ally", cls:"Cadeler A-class",
-  deckArea:5600, deckL:162, deckB:60, payload:15000, deckStrength:20,
+  deckArea:5600, deckL:162, deckB:60, payload:15500, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:12.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:205, boomLength:140, boomStowWidth:18, boomStowAngle:17,
+  hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3000, r1:39, cap2:1500, r2:75,
+  cap1:3300, r1:39, cap2:1500, r2:75,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Sister to Wind Ace. Same confirmed data." },
+  source:"Cadeler delivery announcement (25 Sept 2025, first A-class delivered): deck 5,600m², payload exceeding 18,000t, main crane 3,300t@39m — all as-delivered confirmed figures. Hook 180m per official A-Class tech spec PDF (200m with extended boom)." },
 { id:"windapex", owner:"Cadeler", name:"Wind Apex", cls:"Cadeler A-class",
-  deckArea:5600, deckL:162, deckB:60, payload:15000, deckStrength:20,
+  deckArea:5600, deckL:162, deckB:60, payload:15500, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:12.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:205, boomLength:140, boomStowWidth:18, boomStowAngle:17,
+  hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3000, r1:39, cap2:1500, r2:75,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Sister to Wind Ace. Same confirmed data." },
+  cap1:3300, r1:39, cap2:1500, r2:75,
+  conf:{deckArea:"v",payload:"e",cap1:"e",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
+  source:"Third A-class, not yet delivered (order press: 'similar specifications' to Ace/Ally, deck 5,600m², payload >17,000t, crane TBD). Hook 180m per official A-Class tech spec (sister-ship confirmed). Payload/crane figures are same-class estimates pending Wind Apex's own delivery confirmation." },
 { id:"windkeeper", owner:"Cadeler", name:"Wind Keeper", cls:"Cadeler, ex-Boqiang 3060",
   deckArea:3800, deckL:125, deckB:50, payload:9500, deckStrength:12,
   legWellsExcluded:1, legWellSide:16, nLegs:4, legLength:120, hullDepth:10, legReserve:11,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:144, boomLength:125, boomStowWidth:14, boomStowAngle:14,
   boomClearance:22, accomLength:22, craneBaseArea:230,
-  cap1:2200, r1:35, cap2:1100, r2:70,
+  cap1:2200, r1:24, cap2:1100, r2:70,
   conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"11,000t payload, 2,200t crane, 144m hook, 120.5m legs. User-confirmed." },
+  source:"Cadeler official Wind Keeper Technical Specification PDF: Main Hook SWL 2,200t @ 24m radius (corrected from an earlier @35m entry). 144m hook, 120.5m legs, 9,500t payload otherwise confirmed." },
 { id:"windmaker", owner:"Cadeler", name:"Wind Maker", cls:"Cadeler M-class",
   deckArea:5000, deckL:148, deckB:56, payload:11500, deckStrength:10,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:109, hullDepth:11.5, legReserve:12,
@@ -822,18 +856,18 @@ const DEFAULT_VESSELS = [
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:205, boomLength:150, boomStowWidth:18, boomStowAngle:17,
   boomClearance:26, accomLength:30, craneBaseArea:280,
-  cap1:3000, r1:42, cap2:1500, r2:82,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"17,600t payload, 5,600m² deck, 3,000t crane, 205m hook, 120m legs. User-confirmed." },
+  cap1:3300, r1:42, cap2:1500, r2:82,
+  conf:{deckArea:"e",payload:"e",cap1:"e",hookAboveDeck:"e",legLength:"e",hullDepth:"e",deckStrength:"e"},
+  source:"T-class is an unbuilt newbuild — no public technical spec exists yet. Set to match the A-class's now-confirmed 3,300t crane as a placeholder pending T-class's own disclosure; all other fields remain rough same-class estimates, not vessel-specific confirmations." },
 { id:"cadeler_t2", owner:"Cadeler", name:"Cadeler T-class 2", cls:"Cadeler T-class",
   deckArea:5600, deckL:162, deckB:60, payload:16000, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:14, legReserve:14,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:205, boomLength:150, boomStowWidth:18, boomStowAngle:17,
   boomClearance:26, accomLength:30, craneBaseArea:280,
-  cap1:3000, r1:42, cap2:1500, r2:82,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Sister to T-class 1." },
+  cap1:3300, r1:42, cap2:1500, r2:82,
+  conf:{deckArea:"e",payload:"e",cap1:"e",hookAboveDeck:"e",legLength:"e",hullDepth:"e",deckStrength:"e"},
+  source:"Sister to T-class 1 — same placeholder basis (unbuilt newbuild, no public spec yet)." },
 { id:"windzaratan", owner:"Cadeler", name:"Wind Zaratan", cls:"Cadeler, ex-Seajacks NG-5500X",
   deckArea:2000, deckL:82, deckB:41, payload:12800, deckStrength:10,
   legWellsExcluded:1, legWellSide:12, nLegs:4, legLength:85, hullDepth:7, legReserve:9,
@@ -1233,14 +1267,14 @@ const DEFAULT_VESSELS = [
   source:"Wikipedia/Heerema confirmed: LOA 201.6m, beam 88.4m, depth 49.5m, draft max 31.6m. Two 7,100t cranes, tandem 14,200t at 31.2m radius. DP class III." },
 
 { id:"orion", name:"Orion", cls:"DEME DP3 offshore installation vessel", owner:"DEME",
-  deckArea:6000, deckL:180, deckB:46, payload:12000, deckStrength:20,
+  deckArea:8000, deckL:216, deckB:49, payload:27500, deckStrength:20,
   legWellsExcluded:0, nLegs:0, legLength:0, hullDepth:13, legReserve:0,
   craneType:"ped", cranePos:"fwd-stbd", boomStow:"long", legShape:"cir",
   hookAboveDeck:178, boomLength:160, boomStowWidth:14, boomStowAngle:0,
   boomClearance:22, accomLength:32, craneBaseArea:800,
   cap1:5000, r1:30, cap2:1500, r2:76,
-  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"v",legLength:"x",hullDepth:"e",deckStrength:"e"},
-  source:"Ship-technology confirmed: HLC 295000 crane on 800t pedestal, 160m boom, 90m crane height, 5,000t to 178m height at >30m outreach, 1,500t aux crane. Has integrated Motion Compensated Pile Gripper (MCPG) — DP3, no anchors needed for monopile installation. No jack-up legs." },
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"v",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Ship-technology.com confirmed: LOA 216.5m, beam 49m (corrected from earlier 180m/46m entries), free deck area 8,000m², max payload capacity 30,000t. Usable cargo payload set to 27,500t after ~2,500t deduction for fuel/stores, consistent with this tool's methodology elsewhere. HLC 295000 crane on 800t pedestal, 160m boom, 5,000t to 178m height at >30m outreach, 1,500t aux crane. Integrated Motion Compensated Pile Gripper (MCPG) — DP3, no anchors needed for monopile installation. No jack-up legs." },
 
 { id:"pioneeringspirit", name:"Pioneering Spirit", cls:"Allseas split-hull HLV", owner:"Allseas",
   deckArea:20000, deckL:382, deckB:124, payload:48000, deckStrength:20,
@@ -1280,8 +1314,8 @@ const DEFAULT_VESSELS = [
   hookAboveDeck:95, boomLength:100, boomStowWidth:9, boomStowAngle:0,
   boomClearance:14, accomLength:25, craneBaseArea:400,
   cap1:3000, r1:28, cap2:1200, r2:55,
-  conf:{deckArea:"e",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
-  source:"Boskalis + AIS confirmed: LOA 217m, beam 43m, summer DWT 48,312t. Deck space 165m x 43m (7,095m2). 3,000t crane, DP2. Installed 102x3 pin piles + 65 jackets at East Anglia ONE, 12 XXL monopiles at South Fork Wind." },
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
+  source:"Boskalis + AIS confirmed: LOA 217m, beam 43m, summer DWT 48,312t. deckL kept at full 217m LOA (not the vessel's own quoted net 165m clear-deck figure) because this tool's zone geometry already carves the accommodation block out of deckL separately via accomLength:25 — using the pre-netted 165m here would subtract the superstructure twice and understate the true cargo zone. 3,000t crane, DP2. Installed 102x3 pin piles + 65 jackets at East Anglia ONE, 12 XXL monopiles at South Fork Wind." },
 
 { id:"bokalift2", name:"BOKALIFT 2", cls:"Boskalis DP2 HLV", owner:"Boskalis",
   deckArea:7500, deckL:231, deckB:49, payload:22000, deckStrength:15,
@@ -1291,7 +1325,7 @@ const DEFAULT_VESSELS = [
   boomClearance:15, accomLength:28, craneBaseArea:480,
   cap1:4000, r1:28, cap2:1600, r2:60,
   conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"e",legLength:"x",hullDepth:"e",deckStrength:"e"},
-  source:"Boskalis spec sheet + AIS confirmed: LOA 231m, beam 49m, summer DWT 54,827t, cargo deck 7,500m2, 4,000t crane at 28m radius, DP2, 146 persons." },
+  source:"Boskalis spec sheet + AIS confirmed: LOA 231m, beam 49m, summer DWT 54,827t, cargo deck 7,500m2, 4,000t crane at 28m radius, DP2, 146 persons. deckL kept at full 231m LOA for the same reason as BOKALIFT 1 — this tool's zone geometry subtracts accomLength separately, so using the vessel's own pre-netted deck figure here would double-count the superstructure." },
 
 { id:"seawaystrashnov", name:"Seaway Strashnov", cls:"Subsea7/Seaway 7 monohull crane vessel", owner:"Seaway 7",
   deckArea:4400, deckL:183, deckB:47, payload:11000, deckStrength:15,
