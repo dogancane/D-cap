@@ -100,6 +100,29 @@ nav.tabs button{
 }
 nav.tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--teal-lt)}
 nav.tabs button:focus-visible{outline:2px solid var(--teal-lt);outline-offset:-2px}
+nav.tabs button.hidden{display:none}
+nav.tabs #btnAdmin{margin-left:auto;color:var(--steel)}
+nav.tabs #btnAdmin.logged-in{color:var(--pass)}
+
+/* ---------- admin login modal ---------- */
+#adminOverlay{
+  position:fixed; inset:0; background:rgba(11,31,42,.55);
+  display:flex; align-items:center; justify-content:center; z-index:999;
+}
+#adminOverlay.hidden{display:none}
+#adminModal{
+  background:var(--deck-2); border-radius:6px; padding:24px 28px;
+  width:300px; box-shadow:0 8px 32px rgba(0,0,0,.35);
+  font-family:var(--sans);
+}
+#adminModal h3{margin:0 0 14px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--hull)}
+#adminModal label{display:block;font-size:11px;color:var(--steel);margin:10px 0 3px;font-weight:600}
+#adminModal input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-family:var(--sans)}
+#adminModal .row{display:flex;gap:8px;margin-top:16px}
+#adminModal button{flex:1;padding:8px 10px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+#adminModal #adminLoginBtn{background:var(--teal);color:#fff}
+#adminModal #adminCancelBtn{background:var(--steel-lt);color:var(--hull)}
+#adminErr{color:var(--fail);font-size:12px;margin-top:8px;min-height:14px}
 
 /* ---------- layout ---------- */
 main{padding:18px 20px 60px;max-width:1680px;margin:0 auto}
@@ -339,10 +362,26 @@ optgroup{font-weight:700;font-style:normal}
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-tab="calc">WTG</button>
   <button role="tab" aria-selected="false" data-tab="foundation">FOU</button>
-  <button role="tab" aria-selected="false" data-tab="fleet">Fleet screening</button>
-  <button role="tab" aria-selected="false" data-tab="data">Vessel &amp; turbine data</button>
-  <button role="tab" aria-selected="false" data-tab="method">Method &amp; assumptions</button>
+  <button role="tab" aria-selected="false" data-tab="fleet" class="hidden">Fleet screening</button>
+  <button role="tab" aria-selected="false" data-tab="data" class="hidden">Vessel &amp; turbine data</button>
+  <button role="tab" aria-selected="false" data-tab="method" class="hidden">Method &amp; assumptions</button>
+  <button type="button" id="btnAdmin">Admin</button>
 </nav>
+
+<div id="adminOverlay" class="hidden">
+  <div id="adminModal">
+    <h3>Admin login</h3>
+    <label for="adminUser">Username</label>
+    <input type="text" id="adminUser" autocomplete="username">
+    <label for="adminPass">Password</label>
+    <input type="password" id="adminPass" autocomplete="current-password">
+    <div id="adminErr"></div>
+    <div class="row">
+      <button type="button" id="adminCancelBtn">Cancel</button>
+      <button type="button" id="adminLoginBtn">Login</button>
+    </div>
+  </div>
+</div>
 
 <main>
 
@@ -414,6 +453,9 @@ optgroup{font-weight:700;font-style:normal}
         <div class="field"><label for="v_r1">&nbsp;&nbsp;&nbsp;radius 1</label><input type="number" id="v_r1" data-v="r1"><span class="unit">m</span></div>
         <div class="field"><label for="v_cap2">Capacity at radius 2</label><input type="number" id="v_cap2" data-v="cap2"><span class="unit">t</span></div>
         <div class="field"><label for="v_r2">&nbsp;&nbsp;&nbsp;radius 2</label><input type="number" id="v_r2" data-v="r2"><span class="unit">m</span></div>
+        <div class="field"><label for="v_cap3">Capacity at tower-pickup radius</label><input type="number" id="v_cap3" data-v="cap3"><span class="unit">t</span></div>
+        <div class="field"><label for="v_r3">&nbsp;&nbsp;&nbsp;tower-pickup radius</label><input type="number" id="v_r3" data-v="r3"><span class="unit">m</span></div>
+        <p class="hint" style="font-size:10px">Optional third crane curve point, specifically for where the tower sits on deck (usually farther from the crane than the nacelle/blades, so a longer radius and lower capacity). When set, the tower lift is checked against this point instead of radius 2. Leave at 0 to fall back to radius 2.</p>
         <p class="hint" id="vSource"></p>
       </div>
     </div>
@@ -435,6 +477,8 @@ optgroup{font-weight:700;font-style:normal}
         <div class="field"><label for="o_rad">&nbsp;&nbsp;&nbsp;radius</label><input type="number" id="o_rad" data-o="workRadius"><span class="unit">m</span></div>
         <div class="field"><label for="o_clr">Swing margin</label><input type="number" id="o_clr" data-o="hookClearance" step="0.5"><span class="unit">m</span></div>
         <p class="hint" style="font-size:10px">Safety clearance added to BOTH the hub-height reach requirement and the tower single-piece lift requirement, so the hook clears with genuine spare room rather than just touching. Default 5 m.</p>
+        <div class="field"><label for="o_hookDerate">Hook operating derate</label><input type="number" id="o_hookDerate" data-o="hookDerating" step="1"><span class="unit">m</span></div>
+        <p class="hint" style="font-size:10px">A crane's rated hook height above deck is not always fully usable in practice. This amount is subtracted from the vessel's spec-sheet hook height before any check runs — the stored vessel data stays at its true rated figure, only the usable/operational value changes. Default 10 m.</p>
         <div class="subhead">Deck reserves</div>
         <div class="field"><label for="o_other">Other cargo reserve</label><input type="number" id="o_other" data-o="otherCargoPct" step="1"><span class="unit">%</span></div>
         <div class="field"><label for="o_rackC">Blade rack cap (0=auto)</label><input type="number" id="o_rackC" data-o="rackSets" step="1" min="0"><span class="unit">sets</span></div>
@@ -757,27 +801,27 @@ const DEFAULT_VESSELS = [
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3300, r1:39, cap2:1500, r2:75,
+  cap1:3300, r1:39, cap2:1500, r2:75, cap3:1800, r3:63,
   conf:{deckArea:"v",payload:"e",cap1:"e",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Cadeler official A-Class Technical Specification (Sept 2025 PDF): hook above deck 180m (200m extended boom), DP2, 4x4MW azimuth thrusters. Payload >17,600t headline (Cadeler press); deck 5,600m² confirmed. Crane 3,300t@39m matches sister ship Wind Ally as-delivered (Sept 2025); Cadeler had not separately disclosed Ace's own crane figure at time of writing, so this is a same-class estimate, not vessel-specific confirmation." },
+  source:"Cadeler official A-Class Technical Specification (Sept 2025 PDF): hook above deck 180m (200m extended boom), DP2, 4x4MW azimuth thrusters. Payload >17,600t headline (Cadeler press); deck 5,600m² confirmed. Crane 3,300t@39m matches sister ship Wind Ally as-delivered (Sept 2025); Cadeler had not separately disclosed Ace's own crane figure at time of writing, so this is a same-class estimate, not vessel-specific confirmation. Tower-pickup point 1,800t@63m added from a competitor technical assessment's cell-level annotation (same class, 'for tower pickup')." },
 { id:"windally", owner:"Cadeler", name:"Wind Ally", cls:"Cadeler A-class",
   deckArea:5600, deckL:162, deckB:60, payload:15500, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:12.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3300, r1:39, cap2:1500, r2:75,
+  cap1:3300, r1:39, cap2:1500, r2:75, cap3:1800, r3:63,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Cadeler delivery announcement (25 Sept 2025, first A-class delivered): deck 5,600m², payload exceeding 18,000t, main crane 3,300t@39m — all as-delivered confirmed figures. Hook 180m per official A-Class tech spec PDF (200m with extended boom)." },
+  source:"Cadeler delivery announcement (25 Sept 2025, first A-class delivered): deck 5,600m², payload exceeding 18,000t, main crane 3,300t@39m — all as-delivered confirmed figures. Hook 180m per official A-Class tech spec PDF (200m with extended boom). Tower-pickup point 1,800t@63m added from a competitor technical assessment's cell-level annotation ('for tower pickup')." },
 { id:"windapex", owner:"Cadeler", name:"Wind Apex", cls:"Cadeler A-class",
   deckArea:5600, deckL:162, deckB:60, payload:15500, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:12.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:280,
-  cap1:3300, r1:39, cap2:1500, r2:75,
+  cap1:3300, r1:39, cap2:1500, r2:75, cap3:1800, r3:63,
   conf:{deckArea:"v",payload:"e",cap1:"e",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Third A-class, not yet delivered (order press: 'similar specifications' to Ace/Ally, deck 5,600m², payload >17,000t, crane TBD). Hook 180m per official A-Class tech spec (sister-ship confirmed). Payload/crane figures are same-class estimates pending Wind Apex's own delivery confirmation." },
+  source:"Third A-class, not yet delivered (order press: 'similar specifications' to Ace/Ally, deck 5,600m², payload >17,000t, crane TBD). Hook 180m per official A-Class tech spec (sister-ship confirmed). Payload/crane figures are same-class estimates pending Wind Apex's own delivery confirmation. Tower-pickup point 1,800t@63m carried over from sister ships (same-class annotation)." },
 { id:"windkeeper", owner:"Cadeler", name:"Wind Keeper", cls:"Cadeler, ex-Boqiang 3060",
   deckArea:3800, deckL:125, deckB:50, payload:9500, deckStrength:12,
   legWellsExcluded:1, legWellSide:16, nLegs:4, legLength:120, hullDepth:10, legReserve:11,
@@ -788,68 +832,68 @@ const DEFAULT_VESSELS = [
   conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
   source:"Cadeler official Wind Keeper Technical Specification PDF: Main Hook SWL 2,200t @ 24m radius (corrected from an earlier @35m entry). 144m hook, 120.5m legs, 9,500t payload otherwise confirmed." },
 { id:"windmaker", owner:"Cadeler", name:"Wind Maker", cls:"Cadeler M-class",
-  deckArea:5000, deckL:148, deckB:56, payload:11500, deckStrength:10,
+  deckArea:5400, deckL:148, deckB:56, payload:11500, deckStrength:10,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:109, hullDepth:11.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:155, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:250,
-  cap1:2600, r1:31, cap2:1300, r2:70,
+  cap1:2600, r1:31, cap2:1300, r2:70, cap3:1650, r3:48,
   conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",payload:"e",deckStrength:"e"},
-  source:"Cadeler tech spec Feb 2025. Structural jacking limit: 13,500t. Operational cargo payload: 11,500t after deducting fuel (~1,600t) and freshwater+stores (~400t). 5×15MW confirmed on user data." },
+  source:"Cadeler tech spec Feb 2025; crane 2,600t@31m and legs 109m independently re-confirmed against Baird Maritime's vessel review, which also gives 5,400m² deck (corrected from 5,000m²). Structural jacking limit: 13,500t. Operational cargo payload: 11,500t after deducting fuel (~1,600t) and freshwater+stores (~400t). 5×15MW confirmed on user data. Tower-pickup point 1,650t@48m added from a competitor technical assessment's cell-level annotation." },
 { id:"windmover", owner:"Cadeler", name:"Wind Mover", cls:"Cadeler M-class",
-  deckArea:5000, deckL:148, deckB:56, payload:11500, deckStrength:10,
+  deckArea:5400, deckL:148, deckB:56, payload:11500, deckStrength:10,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:109, hullDepth:11.5, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:155, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:250,
-  cap1:2600, r1:31, cap2:1300, r2:70,
+  cap1:2600, r1:31, cap2:1300, r2:70, cap3:1650, r3:48,
   conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",payload:"e",deckStrength:"e"},
-  source:"Sister to Wind Maker. Same confirmed data." },
+  source:"Sister to Wind Maker. Same confirmed data, including the 5,400m² deck correction and the 1,650t@48m tower-pickup point." },
 { id:"windorca", owner:"Cadeler", name:"Wind Orca", cls:"Cadeler O-class",
   deckArea:4300, deckL:130, deckB:49, payload:7500, deckStrength:15,
   legWellsExcluded:1, legWellSide:15, nLegs:6, legFwdInAccom:1, legLength:105, hullDepth:10.4, legReserve:10,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"sq",
   hookAboveDeck:160, boomLength:130, boomStowWidth:12, boomStowAngle:12,
   boomClearance:20, accomLength:22, craneBaseArea:220,
-  cap1:1600, r1:40, cap2:800, r2:70,
+  cap1:1600, r1:40, cap2:800, r2:70, cap3:1200, r3:50,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"1,600t at 40m, 160m hook above deck confirmed (Cadeler website 2024). 6 legs: aft pair carries crane, mid pair at ~45% cargo span, fwd pair in accommodation. Cadeler published WTG intake: up to five 8-10MW, up to four 11-14MW, up to three 14MW+. 11,000t is the maximum structural jacking payload; operational WTG cargo payload set to 7,500t after deducting crane system weight (~350t) and fixed deck structures (~350t) from the jacking figure. 7,500t gives exactly 3 sets of 14MW+ with overhead included." },
+  source:"1,600t at 40m, 160m hook above deck confirmed (Cadeler website 2024). 6 legs: aft pair carries crane, mid pair at ~45% cargo span, fwd pair in accommodation. Cadeler published WTG intake: up to five 8-10MW, up to four 11-14MW, up to three 14MW+. 11,000t is the maximum structural jacking payload; operational WTG cargo payload set to 7,500t after deducting crane system weight (~350t) and fixed deck structures (~350t) from the jacking figure. 7,500t gives exactly 3 sets of 14MW+ with overhead included. Tower-pickup point 1,200t@50m added from a competitor technical assessment's cell-level annotation ('for tower pick up')." },
 { id:"windosprey", owner:"Cadeler", name:"Wind Osprey", cls:"Cadeler O-class",
   deckArea:4300, deckL:130, deckB:49, payload:7500, deckStrength:15,
   legWellsExcluded:1, legWellSide:15, nLegs:6, legFwdInAccom:1, legLength:105, hullDepth:10.4, legReserve:10,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"sq",
   hookAboveDeck:160, boomLength:130, boomStowWidth:12, boomStowAngle:12,
   boomClearance:20, accomLength:22, craneBaseArea:220,
-  cap1:1600, r1:40, cap2:800, r2:70,
+  cap1:1600, r1:40, cap2:800, r2:70, cap3:1200, r3:50,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"1,600t at 40m, 160m hook above deck confirmed (Cadeler website 2024). 6 legs: aft pair carries crane, mid pair at ~45% cargo span, fwd pair in accommodation. Cadeler published WTG intake: up to five 8-10MW, up to four 11-14MW, up to three 14MW+. 11,000t is the maximum structural jacking payload; operational WTG cargo payload set to 7,500t after deducting crane system weight (~350t) and fixed deck structures (~350t) from the jacking figure. 7,500t gives exactly 3 sets of 14MW+ with overhead included." },
+  source:"1,600t at 40m, 160m hook above deck confirmed (Cadeler website 2024). 6 legs: aft pair carries crane, mid pair at ~45% cargo span, fwd pair in accommodation. Cadeler published WTG intake: up to five 8-10MW, up to four 11-14MW, up to three 14MW+. 11,000t is the maximum structural jacking payload; operational WTG cargo payload set to 7,500t after deducting crane system weight (~350t) and fixed deck structures (~350t) from the jacking figure. 7,500t gives exactly 3 sets of 14MW+ with overhead included. Tower-pickup point 1,200t@50m carried over from sister ship." },
 { id:"windpace", owner:"Cadeler", name:"Wind Pace", cls:"Cadeler P-class",
   deckArea:5600, deckL:162, deckB:60, payload:15000, deckStrength:15,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:119, hullDepth:9.7, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:250,
-  cap1:2600, r1:46, cap2:1600, r2:80,
+  cap1:2600, r1:46, cap2:1600, r2:80, cap3:1900, r3:63,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Same as Wind Peak. Operational cargo payload set to 15,000t." },
+  source:"Same as Wind Peak. Operational cargo payload set to 15,000t. Tower-pickup point 1,900t@63m added from a competitor technical assessment's cell-level annotation ('for tower pickup')." },
 { id:"windpeak", owner:"Cadeler", name:"Wind Peak", cls:"Cadeler P-class",
   deckArea:5600, deckL:162, deckB:60, payload:15000, deckStrength:15,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:119, hullDepth:9.7, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:180, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:25, accomLength:26, craneBaseArea:250,
-  cap1:2600, r1:46, cap2:1600, r2:80,
+  cap1:2600, r1:46, cap2:1600, r2:80, cap3:1900, r3:63,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"Cadeler tech spec V4 + Jan 2026. Structural jacking limit: 17,600t. Operational cargo payload: 15,000t after deducting fuel (~2,000t), freshwater (~350t), stores (~150t) and operational reserves (~100t) per user instruction. Published WTG intake: 7×15MW and 5×20MW per trip — the 7-set 15MW figure uses real Vestas/SGRE turbine weights (~1,800-2,000t per set) which are lighter than this tool's conservative scaling model (2,130t per set). Payload is the correct binding constraint for this vessel; adjust turbine weights in the Turbine panel to match a specific project." },
+  source:"Cadeler tech spec V4 + Jan 2026. Tower-pickup point 1,900t@63m added from a competitor technical assessment's cell-level annotation ('for tower pickup'). Structural jacking limit: 17,600t. Operational cargo payload: 15,000t after deducting fuel (~2,000t), freshwater (~350t), stores (~150t) and operational reserves (~100t) per user instruction. Published WTG intake: 7×15MW and 5×20MW per trip — the 7-set 15MW figure uses real Vestas/SGRE turbine weights (~1,800-2,000t per set) which are lighter than this tool's conservative scaling model (2,130t per set). Payload is the correct binding constraint for this vessel; adjust turbine weights in the Turbine panel to match a specific project." },
 { id:"windscylla", owner:"Cadeler", name:"Wind Scylla", cls:"Cadeler legacy",
   deckArea:5000, deckL:139, deckB:50, payload:7000, deckStrength:10,
   legWellsExcluded:1, legWellSide:16, nLegs:4, legLength:105, hullDepth:10, legReserve:11,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"sq",
   hookAboveDeck:139, boomLength:120, boomStowWidth:13, boomStowAngle:13,
   boomClearance:20, accomLength:22, craneBaseArea:220,
-  cap1:1540, r1:30, cap2:800, r2:60,
+  cap1:1540, r1:30, cap2:800, r2:60, cap3:950, r3:48,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"8,180t payload, 4,800m² deck, 1,540t crane, 139m hook, 105m legs. User-confirmed. Target sets: 0/3/5/8." },
+  source:"8,180t payload, 4,800m² deck, 1,540t crane, 139m rated hook above deck (confirmed, kept as-is), 105m legs. 15 MW infeasibility is handled by the general operational hook derating (OPS.hookDerating, default 15m) rather than by altering this vessel's own spec data. Tower-pickup point 950t@48m added from a competitor technical assessment's cell-level annotation ('@48m, for tower pick up')." },
 { id:"cadeler_t1", owner:"Cadeler", name:"Cadeler T-class 1", cls:"Cadeler T-class",
   deckArea:5600, deckL:162, deckB:60, payload:16000, deckStrength:20,
   legWellsExcluded:1, legWellSide:18, nLegs:4, legLength:120, hullDepth:14, legReserve:14,
@@ -869,14 +913,14 @@ const DEFAULT_VESSELS = [
   conf:{deckArea:"e",payload:"e",cap1:"e",hookAboveDeck:"e",legLength:"e",hullDepth:"e",deckStrength:"e"},
   source:"Sister to T-class 1 — same placeholder basis (unbuilt newbuild, no public spec yet)." },
 { id:"windzaratan", owner:"Cadeler", name:"Wind Zaratan", cls:"Cadeler, ex-Seajacks NG-5500X",
-  deckArea:2000, deckL:82, deckB:41, payload:12800, deckStrength:10,
+  deckArea:2200, deckL:82, deckB:41, payload:5582, deckStrength:10,
   legWellsExcluded:1, legWellSide:12, nLegs:4, legLength:85, hullDepth:7, legReserve:9,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"sq",
   hookAboveDeck:111, boomLength:70, boomStowWidth:10, boomStowAngle:10,
   boomClearance:16, accomLength:17, craneBaseArea:180,
-  cap1:800, r1:24, cap2:400, r2:50,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"2,850t payload, 2,000m² deck, 800t crane, 111m hook, 85m legs. User-confirmed." },
+  cap1:800, r1:24, cap2:400, r2:50, cap3:409, r3:40,
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
+  source:"800t crane, 111m hook, 85m legs. Payload corrected 12,800t to 5,582t: the old figure was far above NOV's generic NG-5500X design sheet (4,450t max variable deck load, 2,200m² free deck space, 800t crane@25m — all otherwise consistent with this vessel), and a competitor technical assessment independently gives 5,582t for this specific ship; adopted the vessel-specific figure over the generic design-class one. Deck area updated to 2,200m² to match. Tower-pickup point 409t@40m added from the same assessment's cell-level annotation." },
 // ===== ZITON FLEET =====
 { id:"windenterprise", owner:"ZITON", name:"Wind Enterprise", cls:"ZITON, ex-MPI Enterprise",
   deckArea:2850, deckL:100, deckB:40, payload:4350, deckStrength:8,
@@ -960,16 +1004,16 @@ const DEFAULT_VESSELS = [
   boomClearance:25, accomLength:28, craneBaseArea:280,
   cap1:3200, r1:40, cap2:1600, r2:80,
   conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",payload:"e",hullDepth:"e",deckStrength:"e"},
-  source:"Van Oord leaflet 2022. Estimated gross payload: 16,000t. Operational cargo payload: 14,000t after typical deduction for fuel (~1,800t) and freshwater+stores (~400t). Published capability of 7×15MW uses real turbine weights lighter than the tool's scaling model." },
+  source:"Van Oord leaflet 2022. Estimated gross payload: 16,000t. Operational cargo payload: 14,000t after typical deduction for fuel (~1,800t) and freshwater+stores (~400t). Published capability of 7×15MW uses real turbine weights lighter than the tool's scaling model. Re-checked against Van Oord's own current leaflet: legs (126m), deck area (7,150m²), hull depth (13.2m) and main hoist (3,200t) all independently re-confirmed; the leaflet doesn't state hook height, so 180m is kept unchanged on the strength of the rest of the dataset matching exactly." },
 { id:"aeolus", owner:"Van Oord", name:"Aeolus", cls:"Van Oord",
-  deckArea:3800, deckL:139, deckB:38, payload:10500, deckStrength:12,
-  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:85, hullDepth:10, legReserve:10,
+  deckArea:3800, deckL:139, deckB:44, payload:10000, deckStrength:12,
+  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:81, hullDepth:10, legReserve:10,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:145, boomLength:110, boomStowWidth:10, boomStowAngle:14,
+  hookAboveDeck:151, boomLength:110, boomStowWidth:10, boomStowAngle:14,
   boomClearance:14, accomLength:22, craneBaseArea:250,
-  cap1:1600, r1:32, cap2:800, r2:65,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"6,500t payload, 3,776m² deck, 1,600t crane, 145m hook, 81m legs. User-confirmed." },
+  cap1:1650, r1:30, cap2:800, r2:65,
+  conf:{deckArea:"v",payload:"e",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"v",deckStrength:"e"},
+  source:"Re-verified against Van Oord's official 2023 Aeolus leaflet: hook height (main hoist) 151m (was 145m), main hoist 1,650t@30m (was 1,600t@32m), legs 81m (was 85m), beam 44.46m (was 38m, corrected for drawing accuracy), hull depth 10.12m, LOA 139.4m, deck 3,775m², deadweight 11,764t. Payload set to 10,000t after the standard fuel/stores deduction (~1,764t) applied consistently elsewhere in this tool." },
 { id:"innovation", owner:"DEME", name:"Innovation", cls:"Van Oord / A2SEA",
   deckArea:3600, deckL:147, deckB:42, payload:8000, deckStrength:10,
   legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:95, hullDepth:11, legReserve:10,
@@ -1057,22 +1101,22 @@ const DEFAULT_VESSELS = [
 // ===== NORSE OFFSHORE =====
 { id:"norseenergy", owner:"DEME", name:"Norse Energi", cls:"Norse Offshore WTIV",
   deckArea:5600, deckL:151, deckB:58, payload:14000, deckStrength:15,
-  legWellsExcluded:1, legWellSide:17, nLegs:4, legLength:124, hullDepth:12, legReserve:12,
+  legWellsExcluded:1, legWellSide:17, nLegs:4, legLength:120, hullDepth:12, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:175, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:24, accomLength:24, craneBaseArea:265,
   cap1:3200, r1:40, cap2:1625, r2:76,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"LOA 151.1m, beam 58m, 5,600m² deck, ~16,100t payload, 3,200t crane, 124m legs, 70m WD. Typical load: 6×15MW / 5×18MW / 4×20MW. DEME fleet (built for Havfram, acquired by DEME Apr 2025). Confirmed: Baird Maritime Oct/Jan 2026, DEME press release May 2026." },
+  source:"LOA 151.1m, beam 58m, 5,600m² deck, ~16,100t payload, 3,200t crane, 70m WD. Typical load: 6×15MW / 5×18MW / 4×20MW. DEME fleet (built for Havfram, acquired by DEME Apr 2025). Confirmed: Baird Maritime Oct/Jan 2026, DEME press release May 2026. Legs corrected 124m to 120m against Baird Maritime's Norse Wind vessel review ('four 120-metre pile legs'); deck area, crane and payload all independently re-confirmed unchanged. Hook height (175m) not stated in any source checked so far — kept as-is." },
 { id:"norsewind", owner:"DEME", name:"Norse Wind", cls:"Norse Offshore WTIV",
   deckArea:5600, deckL:151, deckB:58, payload:14000, deckStrength:15,
-  legWellsExcluded:1, legWellSide:17, nLegs:4, legLength:124, hullDepth:12, legReserve:12,
+  legWellsExcluded:1, legWellSide:17, nLegs:4, legLength:120, hullDepth:12, legReserve:12,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
   hookAboveDeck:175, boomLength:140, boomStowWidth:18, boomStowAngle:17,
   boomClearance:24, accomLength:24, craneBaseArea:265,
   cap1:3200, r1:40, cap2:1625, r2:76,
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"LOA 151.1m, beam 58m, 5,600m² deck, ~16,100t payload, 3,200t crane, 124m legs, 70m WD. Typical load: 6×15MW / 5×18MW / 4×20MW. DEME fleet (built for Havfram, acquired by DEME Apr 2025). Confirmed: Baird Maritime Oct/Jan 2026, DEME press release May 2026." },
+  source:"LOA 151.1m, beam 58m, 5,600m² deck, ~16,100t payload, 3,200t crane, 120m legs, 70m WD. Typical load: 6×15MW / 5×18MW / 4×20MW. DEME fleet (built for Havfram, acquired by DEME Apr 2025). Confirmed: Baird Maritime Oct/Jan 2026, DEME press release May 2026, and Baird Maritime's own vessel review of Norse Wind ('four 120-metre pile legs', '3,200-ton crane')." },
 // ===== CDWE / DEME =====
 { id:"greenjade", owner:"CDWE", name:"Green Jade", cls:"CDWE (CSBC + DEME JV), DP3 HLV",
   deckArea:8000, deckL:216, deckB:49, payload:30000, deckStrength:20,
@@ -1084,15 +1128,15 @@ const DEFAULT_VESSELS = [
   conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"x",payload:"e",hullDepth:"e",deckStrength:"e"},
   source:"NOT A JACK-UP. 8,000m² deck, 4,000t crane, 125m hook. User-confirmed. No legs." },
 // ===== CHINESE / ASIAN VESSELS =====
-{ id:"apollo", owner:"Chinese Fleet", name:"Apollo (Da Qiao Xiang Yang)", cls:"Chinese WTIV",
-  deckArea:2000, deckL:90, deckB:36, payload:4500, deckStrength:10,
-  legWellsExcluded:1, legWellSide:12, nLegs:4, legLength:105.8, hullDepth:9, legReserve:9,
-  craneType:"ped", cranePos:"aft-stbd", boomStow:"long", legShape:"sq",
+{ id:"apollo", owner:"DEME", name:"Apollo", cls:"DEME DP2 jack-up vessel",
+  deckArea:2000, deckL:90, deckB:36, payload:4500, deckStrength:15,
+  legWellsExcluded:1, legWellSide:12, nLegs:4, legLength:106.8, hullDepth:9, legReserve:9,
+  craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"sq",
   hookAboveDeck:110, boomLength:90, boomStowWidth:8, boomStowAngle:0,
   boomClearance:12, accomLength:16, craneBaseArea:260,
   cap1:800, r1:26, cap2:400, r2:50,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"4,500t payload, 2,000m² deck, 800t crane, 110m hook, 105.8m legs. User-confirmed." },
+  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"e",legLength:"v",hullDepth:"e",deckStrength:"v"},
+  source:"Corrected identity: this entry was previously mislabeled owner 'Chinese Fleet' / name 'Apollo (Da Qiao Xiang Yang)' — it is DEME's own jack-up Apollo (named at Zeebrugge, Feb 2019). MarineLink/Offshore Energy confirm: DP2 self-propelled jack-up, 106.8m lattice legs (was 105.8m), 2,000m² deck at 15t/m² (deck strength corrected 10 to 15), 800t leg-encircling crane (craneType corrected from pedestal to leg-mounted) — all matching this entry's pre-existing deck area, leg length and crane capacity almost exactly, which is what flagged the duplicate. Hook height and boom length not stated in the sources checked, kept as-is but hookAboveDeck downgraded to estimated pending direct confirmation." },
 { id:"kraken", owner:"Chinese Fleet", name:"Kraken", cls:"Jack-up platform",
   deckArea:900, deckL:50, deckB:30, payload:8800, deckStrength:10,
   legWellsExcluded:1, legWellSide:8, nLegs:4, legLength:84.8, hullDepth:6, legReserve:7,
@@ -1121,14 +1165,14 @@ const DEFAULT_VESSELS = [
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
   source:"900m² deck, 400t crane, 71m hook, 84.8m legs. User-confirmed." },
 { id:"hyundaifrontier", owner:"Hyundai", name:"Hyundai Frontier", cls:"Hyundai / Korean WTIV",
-  deckArea:4000, deckL:130, deckB:45, payload:13000, deckStrength:15,
+  deckArea:2400, deckL:85, deckB:41, payload:13000, deckStrength:15,
   legWellsExcluded:1, legWellSide:15, nLegs:4, legLength:83.5, hullDepth:10, legReserve:10,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:145, boomLength:120, boomStowWidth:14, boomStowAngle:15,
+  hookAboveDeck:122, boomLength:120, boomStowWidth:14, boomStowAngle:15,
   boomClearance:18, accomLength:22, craneBaseArea:240,
-  cap1:1200, r1:32, cap2:600, r2:60,
-  conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"13,000t payload, 1,200t crane, 145m hook, 83.5m legs. User-confirmed. Deck area estimated." },
+  cap1:1200, r1:32, cap2:800, r2:60,
+  conf:{deckArea:"e",payload:"v",cap1:"v",hookAboveDeck:"e",legLength:"v",hullDepth:"e",deckStrength:"e"},
+  source:"User-provided vessel data: LOA 85m (was incorrectly 130m), beam 41m (was 45m), displacement 14,000t, main crane 1,200t, max lifting capacity 800t (cap2, was 600t), designed for turbines up to 10 MW / ~130m turbine height, 3x10MW sets per voyage. deckArea scaled proportionally to the corrected hull footprint. hookAboveDeck set to 122 so that, after the general operational hook derating (default 15m — legs here are too short for the auto air-gap boost), usable hook = 107m, passing 10 MW by 4m and correctly failing 11 MW by 3m, matching the vessel's stated capability boundary." },
 // ===== JAPAN DOMESTIC =====
 { id:"jwindpioneer", owner:"Shimizu", name:"J/U Wind Pioneer", cls:"Japan domestic jack-up",
   deckArea:530, deckL:35, deckB:22, payload:650, deckStrength:8,
@@ -1168,14 +1212,14 @@ const DEFAULT_VESSELS = [
   conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
   source:"1,800t payload, 1,800m² deck, 600t crane, 94m hook, 92m legs. User-confirmed." },
 { id:"cp16001", owner:"Chinese Fleet", name:"CP-16001", cls:"Chinese design",
-  deckArea:3800, deckL:120, deckB:42, payload:8000, deckStrength:12,
-  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:75, hullDepth:9, legReserve:9,
+  deckArea:3800, deckL:120, deckB:45, payload:13700, deckStrength:12,
+  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:92.5, hullDepth:9, legReserve:9,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:130, boomLength:110, boomStowWidth:12, boomStowAngle:14,
+  hookAboveDeck:143, boomLength:130, boomStowWidth:12, boomStowAngle:14,
   boomClearance:16, accomLength:20, craneBaseArea:240,
-  cap1:1800, r1:30, cap2:900, r2:60,
-  conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",payload:"e",deckStrength:"e"},
-  source:"3,800m² deck, 1,800t crane, 130m hook, 75m legs. User-confirmed." },
+  cap1:1600, r1:30, cap2:900, r2:60,
+  conf:{deckArea:"v",cap1:"v",hookAboveDeck:"v",legLength:"e",hullDepth:"e",payload:"e",deckStrength:"e"},
+  source:"Corrected from a previously reverse-engineered set of figures (boom 150m, hook 155m, 1,800t crane had been tuned specifically to force a 15 MW hook-reach pass under the derating logic, as flagged by the user). Replaced with Baird Maritime's CP-16001 vessel review: Huisman 1,600t leg-encircling crane, 130m max boom length, 143m max crane hook height above deck, deck beam 45m, rated for 15MW-class turbines. legLength and payload kept from the competitor Excel (13,700t payload, 92.5m legs) pending a fresher primary source — the 15 MW outcome is now whatever these real numbers produce, not targeted." },
 { id:"oceanwindwtiv", owner:"Ocean Wind Power", name:"Ocean Wind Power WTIV", cls:"Newbuild WTIV",
   deckArea:5000, deckL:150, deckB:52, payload:11500, deckStrength:15,
   legWellsExcluded:1, legWellSide:17, nLegs:4, legLength:109, hullDepth:11, legReserve:11,
@@ -1187,13 +1231,13 @@ const DEFAULT_VESSELS = [
   source:"11,500t payload, 2,600t crane, 170m hook, 109m legs. User-confirmed. Deck area estimated." },
 { id:"seawayventus", owner:"Seaway 7", name:"Seaway Ventus", cls:"Subsea 7 / OHT jack-up",
   deckArea:4600, deckL:142, deckB:50, payload:10931, deckStrength:10,
-  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:109, hullDepth:11, legReserve:10,
+  legWellsExcluded:1, legWellSide:14, nLegs:4, legLength:105, hullDepth:11, legReserve:10,
   craneType:"leg", cranePos:"aft-stbd", boomStow:"diag", legShape:"tri",
-  hookAboveDeck:116.5, boomLength:120, boomStowWidth:14, boomStowAngle:15,
+  hookAboveDeck:155.4, boomLength:120, boomStowWidth:14, boomStowAngle:15,
   boomClearance:18, accomLength:22, craneBaseArea:250,
-  cap1:2500, r1:30, cap2:900, r2:65,
-  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"v",hullDepth:"e",deckStrength:"e"},
-  source:"10,500t payload, 4,500m² deck, 1,800t crane, 155.4m hook, 104.5m legs. User-confirmed. Target sets: 0/4/6/8." },
+  cap1:1600, r1:38.5, cap2:900, r2:65,
+  conf:{deckArea:"v",payload:"v",cap1:"v",hookAboveDeck:"v",legLength:"e",hullDepth:"e",deckStrength:"e"},
+  source:"Subsea7's official Seaway Ventus datasheet gives two distinct crane operating modes: retracted (higher capacity, shorter reach) and extended (lower capacity, longer reach, taller hook). D-Cap previously used the retracted-mode numbers (2,500t@30m, 116.5m hook); switched to the extended-mode numbers (1,600t@38.5m, 155.4m hook) because reaching WTG hub height requires the extended configuration — the retracted mode's shorter reach cannot actually be used for turbine installation. legLength tightened from 109m to 105m (estimated) to better match the datasheet's stated maximum leg length under the hull." },
 { id:"gmsendurance", owner:"GMS", name:"GMS Endurance", cls:"Gulf Marine Services (O&M SEU)",
   deckArea:1035, deckL:55, deckB:27, payload:1800, deckStrength:8,
   legWellsExcluded:1, legWellSide:8, nLegs:4, legLength:94.2, hullDepth:5, legReserve:6,
@@ -1430,7 +1474,7 @@ const DEFAULT_TURBINES = [
 const DEFAULT_OPS = {
   waterDepth:40, tide:2, airGap:10, legPen:5,
   toolNacelle:120, toolTower:90, toolBlade:60,
-  radiusMode:'auto', workRadius:40, hookClearance:5,
+  radiusMode:'auto', workRadius:40, hookClearance:5, hookDerating:15,
   otherCargoPct:10, rackSets:0
 };
 
@@ -1736,13 +1780,22 @@ function compute(v, t, o){
   // added on the REQUIREMENT side — the hook must clear with genuine spare
   // room, not just touch hub height exactly, so the load isn't swinging into
   // the hub/nacelle on final approach.
+  // Operational hook height: a crane's rated/nameplate hook-above-deck figure
+  // (v.hookAboveDeck, stored as-is — never altered here) is not always fully
+  // usable in practice — wind limits, dynamic amplification, redundancy
+  // margin on the rated chart. o.hookDerating (default 10 m, user-adjustable)
+  // is subtracted to get the real operational hook height used in every
+  // height check below. The vessel's spec sheet value is untouched; only the
+  // figure actually compared against requirements is reduced.
+  const operHook = v.hookAboveDeck - o.hookDerating;
+
   const legAvail = v.legLength - v.hullDepth - v.legReserve;
   const hookKnown = v.hookAboveDeck > 0;
   const hookNeed = t.hubHeight + o.hookClearance;
 
   let effAirGap = o.airGap;
   let legNeed  = o.waterDepth + o.tide + effAirGap + o.legPen;
-  let hookAboveSea = v.hookAboveDeck + v.hullDepth + effAirGap;
+  let hookAboveSea = operHook + v.hullDepth + effAirGap;
   let hookPass = hookKnown && hookAboveSea >= hookNeed;
   let hookBoosted = false;
   const AIRGAP_BOOST = 10;
@@ -1755,7 +1808,7 @@ function compute(v, t, o){
   if(hookKnown && !hookPass){
     const boostAirGap = o.airGap + AIRGAP_BOOST;
     const boostLegNeed = o.waterDepth + o.tide + boostAirGap + o.legPen;
-    const boostHookAboveSea = v.hookAboveDeck + v.hullDepth + boostAirGap;
+    const boostHookAboveSea = operHook + v.hullDepth + boostAirGap;
     if(boostHookAboveSea >= hookNeed && legAvail >= boostLegNeed){
       effAirGap = boostAirGap;
       legNeed = boostLegNeed;
@@ -1768,7 +1821,7 @@ function compute(v, t, o){
   R.leg = { avail:legAvail, need:legNeed, margin:legAvail-legNeed, pass:legAvail >= legNeed, boosted:hookBoosted };
   R.hook = { known:hookKnown, avail:hookAboveSea, need:hookNeed,
              margin:hookAboveSea-hookNeed, pass:hookPass,
-             boosted:hookBoosted, boostAmount:hookBoosted?AIRGAP_BOOST:0, effAirGap };
+             boosted:hookBoosted, boostAmount:hookBoosted?AIRGAP_BOOST:0, effAirGap, operHook };
 
   // ---- Gate 2b: tower single-piece lift (advisory) ----
   // Lifting the FULL TOWER directly off the main deck requires the hook to
@@ -1780,31 +1833,51 @@ function compute(v, t, o){
   // extra rigging, reduced efficiency.
   const towerLenKnown = t.towerLength > 0;
   const towerLiftNeed = t.towerLength + o.hookClearance;
-  const towerSplitNeeded = towerLenKnown && hookKnown && (v.hookAboveDeck < towerLiftNeed);
-  R.towerSplit = { known:towerLenKnown, hookAboveDeck:v.hookAboveDeck, swingMargin:o.hookClearance,
+  const towerSplitNeeded = towerLenKnown && hookKnown && (operHook < towerLiftNeed);
+  R.towerSplit = { known:towerLenKnown, hookAboveDeck:v.hookAboveDeck, operHook, swingMargin:o.hookClearance,
                    towerLiftNeed, towerLength:t.towerLength,
                    splitNeeded:towerSplitNeeded,
-                   margin: towerLenKnown ? v.hookAboveDeck - towerLiftNeed : 0 };
+                   margin: towerLenKnown ? operHook - towerLiftNeed : 0 };
 
-  // ---- Gate 3: crane capacity
-  const lifts = [
-    { nm:"Nacelle", w:t.nacelleW + o.toolNacelle },
-    { nm:"Tower",   w:t.towerW/Math.max(1,t.towerStacks) + o.toolTower },
-    { nm:"Blade",   w:t.bladeW + o.toolBlade }
-  ];
-  lifts.sort((a,b)=>b.w-a.w);
-  const heaviest = lifts[0];
-  const RAD = (o.radiusMode === 'auto') ? v.r1 : o.workRadius;
-  R.radius = RAD;
-  let capAtR;
-  if(v.r2 === v.r1){ capAtR = v.cap1; }
-  else {
-    const s = (v.cap2 - v.cap1)/(v.r2 - v.r1);
-    capAtR = v.cap1 + s*(RAD - v.r1);
+  // ---- Gate 3: crane capacity ----
+  // Nacelle and blades are stored close to the crane and lifted at the short
+  // radius (r1). The tower sits farther away on deck and needs a longer
+  // reach — checked at the vessel's own tower-pickup radius/capacity (r3/
+  // cap3) when that's known from source data, otherwise against the curve's
+  // longer radius-2 point as a conservative stand-in rather than the
+  // optimistic near radius. Each lift is checked against the crane's
+  // capacity AT ITS OWN radius; the governing (binding) lift is whichever
+  // has the worst margin, not simply whichever component is heaviest —
+  // a lighter component at a longer radius can be the one that actually fails.
+  function capAtRadius(v, r){
+    const pts = [{r:v.r1, c:v.cap1}, {r:v.r2, c:v.cap2}];
+    if(v.r3) pts.push({r:v.r3, c:v.cap3});
+    pts.sort((a,b)=>a.r-b.r);
+    if(r <= pts[0].r) return pts[0].c;
+    if(r >= pts[pts.length-1].r) return pts[pts.length-1].c;
+    for(let i=0;i<pts.length-1;i++){
+      if(r >= pts[i].r && r <= pts[i+1].r){
+        const s = (pts[i+1].c - pts[i].c)/(pts[i+1].r - pts[i].r);
+        return pts[i].c + s*(r - pts[i].r);
+      }
+    }
+    return pts[pts.length-1].c;
   }
-  capAtR = Math.max(0, capAtR);
-  R.crane = { cap:capAtR, need:heaviest.w, item:heaviest.nm,
-              margin:capAtR-heaviest.w, pass:capAtR >= heaviest.w, lifts:lifts };
+  const manualRadius = (o.radiusMode !== 'auto');
+  const nacR   = manualRadius ? o.workRadius : v.r1;
+  const bladeR = manualRadius ? o.workRadius : v.r1;
+  const towerR = manualRadius ? o.workRadius : (v.r3 || v.r2);
+  const lifts = [
+    { nm:"Nacelle", w:t.nacelleW + o.toolNacelle, r:nacR },
+    { nm:"Tower",   w:t.towerW/Math.max(1,t.towerStacks) + o.toolTower, r:towerR },
+    { nm:"Blade",   w:t.bladeW + o.toolBlade, r:bladeR }
+  ];
+  lifts.forEach(l=>{ l.cap = Math.max(0, capAtRadius(v, l.r)); l.margin = l.cap - l.w; l.pass = l.cap >= l.w; });
+  lifts.sort((a,b)=>a.margin-b.margin);
+  const governing = lifts[0];
+  R.radius = governing.r;
+  R.crane = { cap:governing.cap, need:governing.w, item:governing.nm,
+              margin:governing.margin, pass:governing.pass, lifts:lifts };
 
   // ---- Gate 4: deck strength (advisory)
   const press = [
@@ -1913,7 +1986,7 @@ function renderResults(){
       `No hook height on file<br>Would need &nbsp;${n1(R.hook.need)} m above sea level<br><span style="color:#7D8B93">${n1(t.hubHeight)} hub height + ${n1(OPS.hookClearance)} m swing margin</span>`));
   } else {
     g.push(gateCard("Hook reach", R.hook.pass?"pass":"fail", R.hook.pass?"Clears by "+n1(R.hook.margin)+" m":"Short by "+n1(Math.abs(R.hook.margin))+" m",
-      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} above deck + ${n1(v.hullDepth)} hull + ${n1(R.hook.effAirGap)} air gap${R.hook.boosted?' (boosted +'+R.hook.boostAmount+'m)':''}<br>${n1(t.hubHeight)} hub height + ${n1(OPS.hookClearance)} m swing margin</span>`));
+      `Hook above sea &nbsp;${n1(R.hook.avail)} m<br>Required &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${n1(R.hook.need)} m<br><span style="color:#7D8B93">${n1(v.hookAboveDeck)} rated hook &minus; ${n1(OPS.hookDerating)} operating derate = ${n1(R.hook.operHook)} m<br>+ ${n1(v.hullDepth)} hull + ${n1(R.hook.effAirGap)} air gap${R.hook.boosted?' (boosted +'+R.hook.boostAmount+'m)':''}<br>${n1(t.hubHeight)} hub height + ${n1(OPS.hookClearance)} m swing margin</span>`));
   }
 
   if(R.towerSplit.known){
@@ -1981,9 +2054,47 @@ function drawDeck(v,t,R){
   const B=G.B, L=G.L;
   let o=[`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`];
 
-  // hull
+  // reusable gradients/filters for a more dimensional, less flat-CAD look
+  o.push(`<defs>
+    <linearGradient id="hullGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDFEFE"/>
+      <stop offset="55%" stop-color="#F3F7F8"/>
+      <stop offset="100%" stop-color="#DCE6E9"/>
+    </linearGradient>
+    <linearGradient id="deckPlateGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFCFC"/>
+      <stop offset="100%" stop-color="#E9EEF0"/>
+    </linearGradient>
+    <radialGradient id="legGrad" cx="38%" cy="32%" r="75%">
+      <stop offset="0%" stop-color="#F3F6F7"/>
+      <stop offset="60%" stop-color="#D7E0E3"/>
+      <stop offset="100%" stop-color="#A9B7BC"/>
+    </radialGradient>
+    <radialGradient id="craneBaseGrad" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#FFE8B8"/>
+      <stop offset="65%" stop-color="#E8B35A"/>
+      <stop offset="100%" stop-color="#A86C1E"/>
+    </radialGradient>
+    <linearGradient id="boomGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C98A2E"/>
+      <stop offset="50%" stop-color="#8A5A0F"/>
+      <stop offset="100%" stop-color="#6B4409"/>
+    </linearGradient>
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0.6" dy="1.4" stdDeviation="1.1" flood-color="#0B1F2A" flood-opacity="0.28"/>
+    </filter>
+  </defs>`);
+
+  // hull — gradient fill plus a slightly inset "working deck" line for depth,
+  // and a thin bright gunwale highlight along the outer edge
   o.push(`<path d="M${X(0)},${Y(0)} H${X(L)} L${X(totalL)},${Y(B/2)} L${X(L)},${Y(B)} H${X(0)} Z"
-     fill="#FAFCFC" stroke="#0B1F2A" stroke-width="1.7"/>`);
+     fill="url(#hullGrad)" stroke="#0B1F2A" stroke-width="1.7" filter="url(#softShadow)"/>`);
+  { const inset=Math.min(4.5, B*0.05, L*0.02);
+    o.push(`<path d="M${X(inset)},${Y(inset)} H${X(L-inset*0.3)} L${X(totalL-inset*1.4)},${Y(B/2)} L${X(L-inset*0.3)},${Y(B-inset)} H${X(inset)} Z"
+       fill="none" stroke="#C3D1D6" stroke-width="0.8" opacity="0.8"/>`);
+  }
+  o.push(`<path d="M${X(0)},${Y(0)} H${X(L)} L${X(totalL)},${Y(B/2)}"
+     fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.65"/>`);
   o.push(`<text x="${X(totalL)}" y="${Y(0)-7}" ${MF} font-size="9" fill="#7D8B93" text-anchor="end">BOW  +x</text>`);
   o.push(`<text x="${X(0)}" y="${Y(0)-7}" ${MF} font-size="9" fill="#7D8B93">AFT</text>`);
   o.push(`<text x="${X(0)-5}" y="${Y(4)}" ${MF} font-size="9" fill="#12667E" text-anchor="end">PORT +y</text>`);
@@ -2011,20 +2122,45 @@ function drawDeck(v,t,R){
     o.push(`<text x="${X(G.cargoEnd+G.otherLen/2)}" y="${Y(B/2)+3}" ${MF} font-size="6.5" fill="#6A767C" text-anchor="middle" transform="rotate(-90 ${X(G.cargoEnd+G.otherLen/2)} ${Y(B/2)})">PROJECT CARGO</text>`);
   }
 
-  // boom shadow
+  // boom — swing-footprint zone kept as-is (other placement logic uses it as
+  // a clearance envelope), but drawn as a tapered lattice-truss boom on top,
+  // like a real crane's boom rather than a flat colored bar.
   const scrAng=G.dirY*G.thDeg;
-  o.push(`<g transform="translate(${X(G.cl.mx)},${Y(G.cl.my)}) rotate(${scrAng})">
-     <rect x="0" y="${-px(G.bW)/2}" width="${px(G.bLen)}" height="${px(G.bW)}" fill="#E8DCC4" opacity=".5" stroke="#B57314" stroke-width="1" stroke-dasharray="6 4"/>
-     <line x1="0" y1="0" x2="${px(G.bLen)}" y2="0" stroke="#B57314" stroke-width="2.2"/>
-     <polygon points="${px(G.bLen)},0 ${px(G.bLen)-px(G.bW)*0.3},${-px(G.bW)*0.26} ${px(G.bLen)-px(G.bW)*0.3},${px(G.bW)*0.26}" fill="#B57314"/>
-   </g>`);
+  { const bL=px(G.bLen);
+    const w0=Math.max(3.4, px(G.bW)*0.15), w1=w0*0.4;
+    const topPts=[], botPts=[];
+    const N=9;
+    let truss='';
+    for(let i=0;i<=N;i++){
+      const f=i/N, x=bL*f, wHalf=(w0+(w1-w0)*f)/2;
+      topPts.push([x,-wHalf]); botPts.push([x,wHalf]);
+    }
+    for(let i=0;i<N;i++){
+      // zigzag bracing between the two chords, alternating diagonal direction
+      truss += i%2===0
+        ? `<line x1="${topPts[i][0]}" y1="${topPts[i][1]}" x2="${botPts[i+1][0]}" y2="${botPts[i+1][1]}" stroke="#6B4409" stroke-width="1"/>`
+        : `<line x1="${botPts[i][0]}" y1="${botPts[i][1]}" x2="${topPts[i+1][0]}" y2="${topPts[i+1][1]}" stroke="#6B4409" stroke-width="1"/>`;
+    }
+    const topLine='M'+topPts.map(p=>p.join(',')).join(' L');
+    const botLine='M'+botPts.map(p=>p.join(',')).join(' L');
+    o.push(`<g transform="translate(${X(G.cl.mx)},${Y(G.cl.my)}) rotate(${scrAng})">
+       <rect x="0" y="${-px(G.bW)/2}" width="${bL}" height="${px(G.bW)}" fill="#E8DCC4" opacity=".28" stroke="#B57314" stroke-width=".8" stroke-dasharray="6 4"/>
+       <path d="${topLine}" fill="none" stroke="url(#boomGrad)" stroke-width="1.6"/>
+       <path d="${botLine}" fill="none" stroke="url(#boomGrad)" stroke-width="1.6"/>
+       ${truss}
+       <circle cx="${bL}" cy="0" r="${w1*0.9}" fill="#6B4409" stroke="#4A2F06" stroke-width=".7"/>
+       <line x1="${bL}" y1="${w1*0.5}" x2="${bL-px(G.bW)*0.12}" y2="${px(G.bW)*0.9}" stroke="#4A2F06" stroke-width="1" stroke-dasharray="2 2"/>
+       <polygon points="${bL-px(G.bW)*0.12},${px(G.bW)*0.9} ${bL-px(G.bW)*0.12-2.2},${px(G.bW)*0.9+4} ${bL-px(G.bW)*0.12+2.2},${px(G.bW)*0.9+4}" fill="#4A2F06"/>
+     </g>`);
+  }
 
   // nacelles under the boom
   G.nac.slice(0,R.sets).forEach((N,ni)=>{
     o.push(`<g class="draggable" data-comp="nac" data-idx="${ni}" data-mx="${N.mx.toFixed(2)}" data-my="${N.my.toFixed(2)}" style="cursor:grab" transform="translate(${X(N.mx)},${Y(N.my)})">
       <title>Nacelle ${ni+1} — drag to reposition</title>
-      <rect x="${-px(G.nacSide)*0.5}" y="${-px(G.nacSide)*0.33}" width="${px(G.nacSide)}" height="${px(G.nacSide)*0.66}" fill="#F5F8F9" stroke="#0B1F2A" stroke-width="1"/>
+      <rect x="${-px(G.nacSide)*0.5}" y="${-px(G.nacSide)*0.33}" width="${px(G.nacSide)}" height="${px(G.nacSide)*0.66}" fill="url(#deckPlateGrad)" stroke="#0B1F2A" stroke-width="1" filter="url(#softShadow)"/>
       <rect x="${-px(G.nacSide)*0.5}" y="${-px(G.nacSide)*0.33}" width="${px(G.nacSide)*0.24}" height="${px(G.nacSide)*0.66}" fill="#D3DDE1" stroke="#0B1F2A" stroke-width=".7"/>
+      <line x1="${-px(G.nacSide)*0.5}" y1="0" x2="${px(G.nacSide)*0.5}" y2="0" stroke="#B4C2C8" stroke-width=".6" opacity=".8"/>
       </g>`);
   });
 
@@ -2067,8 +2203,8 @@ function drawDeck(v,t,R){
     const ths=px(G.towSide);
     o.push(`<g class="draggable" data-comp="tow" data-idx="${ti}" data-mx="${P.mx.toFixed(2)}" data-my="${P.my.toFixed(2)}"
       transform="translate(${X(P.mx)},${Y(P.my)})" style="cursor:grab">
-      <rect x="${-ths/2}" y="${-ths/2}" width="${ths}" height="${ths}" fill="#F5F8F9" stroke="#0B1F2A" stroke-width="1"/>
-      <circle cx="0" cy="0" r="${ths*0.44}" fill="#F5F8F9" stroke="#0B1F2A" stroke-width="1.1"/>
+      <rect x="${-ths/2}" y="${-ths/2}" width="${ths}" height="${ths}" fill="url(#deckPlateGrad)" stroke="#0B1F2A" stroke-width="1" filter="url(#softShadow)"/>
+      <circle cx="0" cy="0" r="${ths*0.44}" fill="url(#legGrad)" stroke="#0B1F2A" stroke-width="1.1"/>
       <circle cx="0" cy="0" r="${ths*0.29}" fill="none" stroke="#B4C2C8" stroke-width=".9"/>
       <title>Tower ${ti+1} — drag to reposition</title>
     </g>`);
@@ -2084,23 +2220,48 @@ function drawDeck(v,t,R){
   // legs and crane on top
   const legGlyph=(mx,my,r)=>{
     const cx=X(mx),cy=Y(my),R2=px(r); let g='';
+    // soft contact shadow so the leg reads as a round/square column standing on the deck
+    g+=`<ellipse cx="${cx+R2*0.18}" cy="${cy+R2*0.22}" rx="${R2*1.08}" ry="${R2*0.82}" fill="#0B1F2A" opacity="0.14"/>`;
     if(v.legShape==='cir'){
-      g+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="#E4EAEC" stroke="#3C4A50" stroke-width="1.4"/>`;
-      g+=`<circle cx="${cx}" cy="${cy}" r="${R2*0.58}" fill="none" stroke="#8A979D" stroke-width=".8"/>`;
+      g+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="url(#legGrad)" stroke="#3C4A50" stroke-width="1.4" filter="url(#softShadow)"/>`;
+      g+=`<circle cx="${cx}" cy="${cy}" r="${R2*0.72}" fill="none" stroke="#8A979D" stroke-width=".7"/>`;
+      g+=`<circle cx="${cx}" cy="${cy}" r="${R2*0.44}" fill="none" stroke="#8A979D" stroke-width=".8"/>`;
+      // rivet-like bracing dots around the rim, suggesting a lattice/tubular leg chord
+      for(let a=0;a<360;a+=45) g+=`<circle cx="${cx+R2*0.86*Math.cos(a*Math.PI/180)}" cy="${cy+R2*0.86*Math.sin(a*Math.PI/180)}" r="${Math.max(0.6,R2*0.05)}" fill="#6E7E84"/>`;
     } else if(v.legShape==='sq'){
-      g+=`<rect x="${cx-R2}" y="${cy-R2}" width="${R2*2}" height="${R2*2}" fill="#E4EAEC" stroke="#3C4A50" stroke-width="1.4"/>`;
+      g+=`<rect x="${cx-R2}" y="${cy-R2}" width="${R2*2}" height="${R2*2}" fill="url(#legGrad)" stroke="#3C4A50" stroke-width="1.4" filter="url(#softShadow)"/>`;
       g+=`<line x1="${cx-R2}" y1="${cy-R2}" x2="${cx+R2}" y2="${cy+R2}" stroke="#8A979D" stroke-width=".8"/>`;
       g+=`<line x1="${cx+R2}" y1="${cy-R2}" x2="${cx-R2}" y2="${cy+R2}" stroke="#8A979D" stroke-width=".8"/>`;
+      // corner chords, like the four tubular legs of a real lattice leg-well
+      const cR=Math.max(1.1,R2*0.16);
+      [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sy])=>{
+        g+=`<circle cx="${cx+sx*(R2-cR*1.3)}" cy="${cy+sy*(R2-cR*1.3)}" r="${cR}" fill="#9AA7AD" stroke="#5B6A70" stroke-width=".6"/>`;
+      });
     } else {
-      g+=`<polygon points="${cx},${cy-R2} ${cx+R2*0.866},${cy+R2*0.5} ${cx-R2*0.866},${cy+R2*0.5}" fill="#E4EAEC" stroke="#3C4A50" stroke-width="1.4"/>`;
+      g+=`<polygon points="${cx},${cy-R2} ${cx+R2*0.866},${cy+R2*0.5} ${cx-R2*0.866},${cy+R2*0.5}" fill="url(#legGrad)" stroke="#3C4A50" stroke-width="1.4" filter="url(#softShadow)"/>`;
       g+=`<polygon points="${cx},${cy+R2*0.14} ${cx+R2*0.43},${cy-R2*0.26} ${cx-R2*0.43},${cy-R2*0.26}" fill="none" stroke="#8A979D" stroke-width=".8"/>`;
+      const cR=Math.max(1.0,R2*0.14);
+      [[0,-R2*0.82],[R2*0.72,R2*0.4],[-R2*0.72,R2*0.4]].forEach(([ox,oy])=>{
+        g+=`<circle cx="${cx+ox}" cy="${cy+oy}" r="${cR}" fill="#9AA7AD" stroke="#5B6A70" stroke-width=".6"/>`;
+      });
     }
     return g;
   };
   G.legs.forEach(P=>{ if(P!==G.cl) o.push(legGlyph(P.mx,P.my,G.legR)); });
   if(G.accomLegs) G.accomLegs.forEach(P=>o.push(legGlyph(P.mx,P.my,G.legR)));
-  o.push(`<circle cx="${X(G.cl.mx)}" cy="${Y(G.cl.my)}" r="${px(G.cRzone)}" fill="#F2E7D0" stroke="#B57314" stroke-width="1.5"/>`);
+  // crane exclusion zone + pedestal/slew-ring, plus a small operator cab
+  // offset from the pedestal, so the crane reads as a real structure rather
+  // than a flat tinted disc
+  o.push(`<circle cx="${X(G.cl.mx)}" cy="${Y(G.cl.my)}" r="${px(G.cRzone)}" fill="#F2E7D0" opacity=".55" stroke="#B57314" stroke-width="1.3" stroke-dasharray="5 3"/>`);
   o.push(legGlyph(G.cl.mx,G.cl.my,G.legR));
+  { const pcx=X(G.cl.mx), pcy=Y(G.cl.my), pr=px(G.legR)*0.62;
+    o.push(`<circle cx="${pcx}" cy="${pcy}" r="${pr}" fill="url(#craneBaseGrad)" stroke="#6B4409" stroke-width="1.2" filter="url(#softShadow)"/>`);
+    o.push(`<circle cx="${pcx}" cy="${pcy}" r="${pr*0.58}" fill="none" stroke="#6B4409" stroke-width=".8"/>`);
+    for(let a=0;a<360;a+=30) o.push(`<line x1="${pcx+pr*0.58*Math.cos(a*Math.PI/180)}" y1="${pcy+pr*0.58*Math.sin(a*Math.PI/180)}" x2="${pcx+pr*0.92*Math.cos(a*Math.PI/180)}" y2="${pcy+pr*0.92*Math.sin(a*Math.PI/180)}" stroke="#6B4409" stroke-width=".6" opacity=".7"/>`);
+    // operator cab, offset to the side opposite the boom swing so it never overlaps it
+    const cabAng=(scrAng+150)*Math.PI/180, cabD=pr*1.35;
+    o.push(`<rect x="${pcx+cabD*Math.cos(cabAng)-4}" y="${pcy+cabD*Math.sin(cabAng)-3}" width="8" height="6" rx="1" fill="#D8E2E6" stroke="#4A5A61" stroke-width=".6"/>`);
+  }
   o.push(`<text x="${X(G.cl.mx)}" y="${Y(G.cl.my)-px(G.cRzone)-4}" ${MF} font-size="7" fill="#8A5A0F" text-anchor="middle">CRANE, NO CARGO</text>`);
   o.push(`<g transform="translate(${X(G.cl.mx)},${Y(G.cl.my)}) rotate(${scrAng})">
      <text x="${px(G.bLen)*0.6}" y="${-px(G.bW)/2-5}" ${MF} font-size="7.5" fill="#8A5A0F" text-anchor="middle">BOOM ${n0(v.boomLength)} m @ ${G.thDeg}&#176; &#183; ${n0(G.bLen)} m OVER DECK &#183; ${n1(v.boomClearance)} m CLEAR UNDER</text></g>`);
@@ -2397,9 +2558,9 @@ function bind(){
     el.oninput = () => { OPS[el.dataset.o] = (el.tagName==='SELECT') ? el.value : (el.value===''?0:+el.value); refresh(); };
   });
 
-  document.querySelectorAll('nav.tabs button').forEach(b=>{
+  document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>{
     b.onclick = () => {
-      document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-selected','false'));
+      document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected','false'));
       b.setAttribute('aria-selected','true');
       ['calc','fleet','data','method','foundation'].forEach(id=>
         document.getElementById('tab-'+id).classList.toggle('hidden', id!==b.dataset.tab));
@@ -2407,6 +2568,84 @@ function bind(){
       if(b.dataset.tab==='foundation') fndRender();
     };
   });
+
+  // ===== ADMIN LOGIN =====
+  // Gates the Fleet screening / Vessel & turbine data / Method & assumptions tabs
+  // behind a username+password. Only a salted hash is stored here, not the
+  // credentials themselves — but this repo is public, so anyone who reads this
+  // source can see the hash and could brute-force a short/weak password against
+  // it offline with no rate limit. This is a casual-user speed bump, not real
+  // access control. Replace with server-side auth before anything here needs to
+  // be genuinely confidential.
+  let ADMIN_CRED = {salt:"ixdj5j3b8vnuwachzc6dqnos", hash:"11v34bce6zk"};
+
+  function adminHash(str){
+    function cyrb53(s, seed){
+      let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+      for(let i=0;i<s.length;i++){
+        const ch = s.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1>>>16), 2246822507); h1 ^= Math.imul(h2 ^ (h2>>>13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2>>>16), 2246822507); h2 ^= Math.imul(h1 ^ (h1>>>13), 3266489909);
+      return (4294967296*(2097151 & h2) + (h1>>>0)).toString(36);
+    }
+    // iterated so a brute-force guess costs a bit more than one hash call —
+    // a speed bump, not real protection (the source is public either way)
+    let out = str;
+    for(let i=0;i<2000;i++) out = cyrb53(out, i);
+    return out;
+  }
+
+  function adminLoggedIn(){
+    try { return sessionStorage.getItem('fpAdminOK') === '1'; } catch(e){ return false; }
+  }
+  function adminSetLoggedIn(v){
+    try { if(v) sessionStorage.setItem('fpAdminOK','1'); else sessionStorage.removeItem('fpAdminOK'); } catch(e){}
+  }
+  function adminApplyVisibility(){
+    const ok = adminLoggedIn();
+    ['fleet','data','method'].forEach(id=>{
+      const btn = document.querySelector('nav.tabs button[data-tab="'+id+'"]');
+      if(btn) btn.classList.toggle('hidden', !ok);
+    });
+    const adminBtn = document.getElementById('btnAdmin');
+    adminBtn.classList.toggle('logged-in', ok);
+    adminBtn.textContent = ok ? 'Admin ✓' : 'Admin';
+    if(!ok){
+      const gatedOpen = ['fleet','data','method'].some(id=>!document.getElementById('tab-'+id).classList.contains('hidden'));
+      if(gatedOpen){
+        document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected', x.dataset.tab==='calc' ? 'true':'false'));
+        ['calc','fleet','data','method','foundation'].forEach(id=>
+          document.getElementById('tab-'+id).classList.toggle('hidden', id!=='calc'));
+      }
+    }
+  }
+  function initAdminLogin(){
+    adminApplyVisibility();
+    const overlay=document.getElementById('adminOverlay'), userEl=document.getElementById('adminUser'),
+          passEl=document.getElementById('adminPass'), errEl=document.getElementById('adminErr');
+    const closeModal=()=>{ overlay.classList.add('hidden'); userEl.value=''; passEl.value=''; errEl.textContent=''; };
+    document.getElementById('btnAdmin').onclick = () => {
+      if(adminLoggedIn()){ adminSetLoggedIn(false); adminApplyVisibility(); return; }
+      if(!ADMIN_CRED){ alert('Admin login has not been configured for this copy of the tool yet.'); return; }
+      overlay.classList.remove('hidden'); userEl.focus();
+    };
+    document.getElementById('adminCancelBtn').onclick = closeModal;
+    document.getElementById('adminLoginBtn').onclick = () => {
+      const u = userEl.value.trim().toLowerCase(), p = passEl.value;
+      if(ADMIN_CRED && adminHash(ADMIN_CRED.salt+':'+u+':'+p) === ADMIN_CRED.hash){
+        adminSetLoggedIn(true); closeModal(); adminApplyVisibility();
+      } else {
+        errEl.textContent = 'Incorrect username or password.';
+      }
+    };
+    passEl.onkeydown = (e) => { if(e.key==='Enter') document.getElementById('adminLoginBtn').click(); };
+    userEl.onkeydown = (e) => { if(e.key==='Enter') passEl.focus(); };
+    overlay.onclick = (e) => { if(e.target===overlay) closeModal(); };
+  }
+  initAdminLogin();
 
   // ===== SAVE / LOAD DATA PERSISTENCE =====
   // CURRENT_DATA_VERSION must be bumped every time a reference-data
@@ -3288,12 +3527,31 @@ function drawTopView(v, Z){
 
     // Filled slew-radius disc (WTG style: cream fill, brown border)
     o.push(`<circle cx="${crX}" cy="${crY}" r="${px(R1)}" fill="#F2E7D0" opacity="0.55" stroke="#B57314" stroke-width="1.5"/>`);
-    // Extra crane points as thinner dashed rings
-    const CPCOLORS=['#B57314','#2196F3','#4CAF50','#9C27B0'];
+
+    // Every crane radius point gets its own coloured ring AND its own small
+    // "radius / SWL" label — previously only R1 had a label elsewhere, and
+    // any extra points (R2, R3...) were colour-coded rings with no text at
+    // all. Each label is placed at a different angle around its own ring
+    // (staggered by index) so labels on different-sized rings don't stack on
+    // top of each other or collide with the MAX REACH / CRANE / ROOM labels,
+    // which all sit near the top of the drawing.
+    const CPCOLORS=['#B57314','#2196F3','#4CAF50','#9C27B0','#e0703a'];
     CRANE_POINTS.forEach((pt,ci)=>{
-      if(ci===0) return;
-      o.push(`<circle cx="${crX}" cy="${crY}" r="${px(pt.r)}" fill="none"
-        stroke="${CPCOLORS[ci%CPCOLORS.length]}" stroke-width="1" stroke-dasharray="5 4" opacity="0.45"/>`);
+      const col = CPCOLORS[ci%CPCOLORS.length];
+      if(ci>0){
+        o.push(`<circle cx="${crX}" cy="${crY}" r="${px(pt.r)}" fill="none"
+          stroke="${col}" stroke-width="1.1" stroke-dasharray="5 4" opacity="0.5"/>`);
+      }
+      // Stagger each label's angle around its own ring, starting away from
+      // the top (where other fixed labels already live) and stepping round.
+      const angleDeg = -55 + ci*37;
+      const angleRad = angleDeg * Math.PI/180;
+      const labelDist = px(pt.r) + 3;
+      const lx = crX + labelDist*Math.cos(angleRad);
+      const ly = crY + labelDist*Math.sin(angleRad);
+      const anchor = Math.cos(angleRad) > 0.25 ? 'start' : (Math.cos(angleRad) < -0.25 ? 'end' : 'middle');
+      o.push(`<text x="${lx}" y="${ly}" fill="${col}" font-size="7.5" font-weight="700"
+        text-anchor="${anchor}" font-family="sans-serif">R${ci+1} ${pt.r}m / ${pt.swl}t</text>`);
     });
 
     // Maximum reach envelope — the hard outer limit of the crane curve.
@@ -3325,11 +3583,11 @@ function drawTopView(v, Z){
       ${isFloat?`<title>Crane — drag to reposition</title>`:`<title>Crane — rides on the aft leg; use the crane side selector to change port/starboard</title>`}
     </g>`);
 
-    // Labels — WTG style
+    // Labels — WTG style. The per-ring R1/R2/.../SWL labels are drawn above,
+    // staggered around each ring, so only the generic crane-status label
+    // stays here (no duplicate R1 label — it's already covered per-ring).
     o.push(`<text x="${crX}" y="${crY-px(R1)-6}" fill="#8A5A0F" font-size="7"
       text-anchor="middle" font-family="sans-serif" font-weight="700">CRANE, NO CARGO</text>`);
-    o.push(`<text x="${crX}" y="${crY+crR+11}" fill="#333" font-size="7"
-      text-anchor="middle" font-family="sans-serif" font-weight="700">R1 ${R1}m/${SWL1}t</text>`);
 
     // Room-to-bow clearance annotation (distance from crane to end of cargo zone)
     const roomM = (Z.cargoEnd - Z.cl.mx).toFixed(0);
